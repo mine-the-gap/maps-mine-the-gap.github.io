@@ -3,40 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COG Multi-Layer Explorer | minethegap.eu</title>
+    <title>Resource Explorer | minethegap.eu</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        #map { height: calc(100vh - 80px); width: 100%; }
+        #map { height: calc(100vh - 80px); width: 100%; background: #0f172a; }
         .custom-loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border: 3px solid #1e293b;
+            border-top: 3px solid #3b82f6;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Prevent scrollbars on mobile */
+        body { overflow: hidden; position: fixed; width: 100%; height: 100%; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans">
+<body class="bg-slate-950 text-slate-100">
 
-    <header class="h-20 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6 shadow-lg">
-        <div class="flex items-center space-x-4">
-            <div class="flex flex-col">
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                    Resource COG Explorer
-                </h1>
-                <span class="text-[10px] text-gray-500 uppercase tracking-widest">maps.minethegap.eu</span>
+    <header class="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 md:px-8 shadow-2xl relative z-[2000]">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg hidden sm:block">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
             </div>
-            <div id="loading-spinner" class="hidden ml-4 custom-loader"></div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white leading-tight">Mineral Density</h1>
+                <p class="text-[10px] text-slate-500 uppercase font-semibold tracking-tighter">maps.minethegap.eu</p>
+            </div>
+            <div id="loading-spinner" class="hidden custom-loader"></div>
         </div>
-        <div class="flex items-center gap-4">
-            <label for="layer-select" class="text-sm font-medium text-gray-400 uppercase tracking-wider">Active Layer:</label>
-            <select id="layer-select" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="">Loading bands...</option>
+        
+        <div class="flex items-center space-x-2">
+            <select id="layer-select" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none min-w-[120px]">
+                <option value="">Loading...</option>
             </select>
         </div>
     </header>
@@ -44,18 +47,22 @@
     <main class="relative">
         <div id="map"></div>
 
-        <div id="data-panel" class="absolute bottom-6 right-6 z-[1000] w-72 bg-gray-800/95 backdrop-blur border border-gray-700 rounded-xl shadow-2xl p-4 hidden">
-            <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
-                <h3 class="font-bold text-blue-400">Location Data</h3>
-                <button onclick="document.getElementById('data-panel').classList.add('hidden')" class="text-gray-500 hover:text-white">✕</button>
+        <!-- Tooltip / Info Panel -->
+        <div id="data-panel" class="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-[1000] w-[90%] md:w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-5 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex flex-col">
+                    <span class="text-[10px] text-slate-500 uppercase font-bold">Selected Region</span>
+                    <span id="coords-display" class="text-xs font-mono text-blue-400">0.00, 0.00</span>
+                </div>
+                <button onclick="document.getElementById('data-panel').classList.add('hidden')" class="p-1 hover:bg-slate-800 rounded-full transition-colors">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-            <div id="pixel-values" class="space-y-2 text-sm"></div>
-            <div class="mt-4 text-[10px] text-gray-500 italic">
-                Coordinates: <span id="coords-display">-</span>
-            </div>
+            <div id="pixel-values" class="space-y-2.5"></div>
         </div>
 
-        <div id="error-toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[2000] bg-red-900/90 border border-red-500 text-white px-6 py-3 rounded-full shadow-2xl hidden">
+        <!-- Toast for Errors -->
+        <div id="error-toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[3000] bg-rose-500 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-lg transition-all transform translate-y-2 hidden">
             <span id="error-message"></span>
         </div>
     </main>
@@ -76,45 +83,46 @@
         const errorMessage = document.getElementById('error-message');
 
         const COG_URL = "material_areas_km2.tif";
+        const BAND_NAMES = ["Gold", "Copper", "Iron", "Lithium", "Silver", "Cobalt"];
 
         function showError(msg) {
             errorMessage.textContent = msg;
-            errorToast.classList.remove('hidden');
-            setTimeout(() => errorToast.classList.add('hidden'), 10000);
+            errorToast.classList.remove('hidden', 'translate-y-2');
+            setTimeout(() => errorToast.classList.add('hidden', 'translate-y-2'), 6000);
         }
 
         async function init() {
-            map = L.map('map', { center: [0, 0], zoom: 2, zoomControl: false });
+            map = L.map('map', { center: [20, 0], zoom: 3, zoomControl: false, attributionControl: false });
+            
+            L.control.attribution({ position: 'bottomleft' }).addTo(map);
             L.control.zoom({ position: 'topright' }).addTo(map);
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
             }).addTo(map);
 
             try {
                 spinner.classList.remove('hidden');
                 const response = await fetch(COG_URL);
-                if (!response.ok) throw new Error(`Could not find ${COG_URL}.`);
+                if (!response.ok) throw new Error(`COG file not found: ${response.status}`);
 
                 const arrayBuffer = await response.arrayBuffer();
                 geoRaster = await parseGeoraster(arrayBuffer);
 
                 layerSelect.innerHTML = '';
-                const bandNames = ["Gold", "Copper", "Iron", "Lithium", "Silver", "Cobalt"];
-                
                 for(let i = 0; i < geoRaster.numberOfRasters; i++) {
                     const option = document.createElement('option');
                     option.value = i;
-                    option.textContent = bandNames[i] || `Layer ${i + 1}`;
+                    option.textContent = BAND_NAMES[i] || `Band ${i + 1}`;
                     layerSelect.appendChild(option);
                 }
 
                 updateLayer(0);
                 map.fitBounds([[geoRaster.ymin, geoRaster.xmin], [geoRaster.ymax, geoRaster.xmax]]);
                 spinner.classList.add('hidden');
-            } catch (error) {
+            } catch (err) {
                 spinner.classList.add('hidden');
-                showError(error.message);
+                showError("Map Error: " + err.message);
             }
 
             map.on('click', handleMapClick);
@@ -125,15 +133,17 @@
 
             const min = geoRaster.mins[bandIndex];
             const max = geoRaster.maxs[bandIndex];
-            const scale = chroma.scale(['#111827', '#10b981', '#3b82f6', '#fbbf24']).domain([min, max]);
+            
+            // Resource-specific color scale
+            const scale = chroma.scale(['rgba(0,0,0,0)', '#22c55e', '#3b82f6', '#eab308']).domain([min, max]);
 
             currentLayer = new GeoRasterLayer({
                 georaster: geoRaster,
-                opacity: 0.8,
+                opacity: 0.85,
                 pixelValuesToColorFn: values => {
                     const val = values[bandIndex];
                     if (val === geoRaster.noDataValue || val <= 0 || isNaN(val)) return null;
-                    return scale(val).hex();
+                    return scale(val).css();
                 },
                 resolution: 128
             });
@@ -147,19 +157,22 @@
 
             if (x >= 0 && x < geoRaster.width && y >= 0 && y < geoRaster.height) {
                 dataPanel.classList.remove('hidden');
-                coordsDisplay.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                coordsDisplay.textContent = `${lat.toFixed(3)}°, ${lng.toFixed(3)}°`;
                 pixelValuesDiv.innerHTML = '';
                 
                 for(let i = 0; i < geoRaster.numberOfRasters; i++) {
                     const val = geoRaster.values[i][y][x];
-                    const label = layerSelect.options[i].textContent;
+                    const label = BAND_NAMES[i] || `Layer ${i + 1}`;
                     const isSelected = layerSelect.value == i;
                     
                     const row = document.createElement('div');
-                    row.className = `flex justify-between p-2 rounded ${isSelected ? 'bg-blue-900/40 border border-blue-500/30' : 'bg-gray-700/50'}`;
+                    row.className = `flex justify-between items-center p-2.5 rounded-xl border ${isSelected ? 'bg-blue-500/10 border-blue-500/50' : 'bg-slate-800/40 border-transparent'}`;
                     row.innerHTML = `
-                        <span class="${isSelected ? 'font-bold text-blue-300' : 'text-gray-300'}">${label}</span>
-                        <span class="font-mono text-emerald-400">${(val === geoRaster.noDataValue || val < 0) ? '0' : val.toLocaleString()} km²</span>
+                        <span class="text-xs ${isSelected ? 'font-bold text-blue-300' : 'text-slate-400'}">${label}</span>
+                        <span class="text-sm font-mono font-bold ${val > 0 ? 'text-emerald-400' : 'text-slate-600'}">
+                            ${(val === geoRaster.noDataValue || val <= 0) ? '0' : val.toFixed(2)}
+                            <span class="text-[10px] font-normal opacity-60 ml-0.5">km²</span>
+                        </span>
                     `;
                     pixelValuesDiv.appendChild(row);
                 }
