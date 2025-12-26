@@ -3,43 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resource Explorer | minethegap.eu</title>
+    <title>Resource Explorer | Mineral Density</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        #map { height: calc(100vh - 80px); width: 100%; background: #0f172a; }
+        #map { height: calc(100vh - 64px); width: 100%; background: #020617; }
         .custom-loader {
-            border: 3px solid #1e293b;
-            border-top: 3px solid #3b82f6;
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            border-top: 2px solid #3b82f6;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Prevent scrollbars on mobile */
-        body { overflow: hidden; position: fixed; width: 100%; height: 100%; }
+        body { overflow: hidden; margin: 0; padding: 0; }
+        
+        /* Custom Leaflet Controls Styling */
+        .leaflet-bar { border: none !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important; }
+        .leaflet-bar a { background-color: #1e293b !important; color: #f8fafc !important; border-bottom: 1px solid #334155 !important; }
+        .leaflet-bar a:hover { background-color: #334155 !important; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100">
+<body class="bg-slate-950 text-slate-100 font-sans">
 
-    <header class="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 md:px-8 shadow-2xl relative z-[2000]">
-        <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2 rounded-lg hidden sm:block">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-            </div>
-            <div>
-                <h1 class="text-lg font-bold tracking-tight text-white leading-tight">Mineral Density</h1>
-                <p class="text-[10px] text-slate-500 uppercase font-semibold tracking-tighter">maps.minethegap.eu</p>
+    <header class="h-16 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-6 shadow-xl relative z-[2000]">
+        <div class="flex items-center space-x-4">
+            <div class="flex flex-col">
+                <h1 class="text-base font-bold tracking-tight text-white leading-none mb-1">Mineral Density Explorer</h1>
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Global Resource Distribution</p>
             </div>
             <div id="loading-spinner" class="hidden custom-loader"></div>
         </div>
         
-        <div class="flex items-center space-x-2">
-            <select id="layer-select" class="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none min-w-[120px]">
-                <option value="">Loading...</option>
+        <div class="flex items-center space-x-3">
+            <span class="text-xs text-slate-400 font-medium hidden sm:inline-block uppercase tracking-tighter">Current Layer</span>
+            <select id="layer-select" class="bg-slate-800 border border-slate-700 text-xs font-semibold rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none min-w-[140px] text-slate-200 cursor-pointer hover:bg-slate-750 transition-colors">
+                <option value="">Connecting...</option>
             </select>
         </div>
     </header>
@@ -48,95 +50,100 @@
         <div id="map"></div>
 
         <!-- Tooltip / Info Panel -->
-        <div id="data-panel" class="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-[1000] w-[90%] md:w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-5 hidden">
+        <div id="data-panel" class="absolute bottom-8 left-1/2 -translate-x-1/2 md:left-auto md:right-8 md:translate-x-0 z-[1000] w-[90%] md:w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-5 hidden transition-all duration-300">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex flex-col">
-                    <span class="text-[10px] text-slate-500 uppercase font-bold">Selected Region</span>
+                    <span class="text-[10px] text-slate-500 uppercase font-extrabold tracking-widest">Coordinates</span>
                     <span id="coords-display" class="text-xs font-mono text-blue-400">0.00, 0.00</span>
                 </div>
-                <button onclick="document.getElementById('data-panel').classList.add('hidden')" class="p-1 hover:bg-slate-800 rounded-full transition-colors">
+                <button onclick="document.getElementById('data-panel').classList.add('hidden')" class="p-1.5 hover:bg-slate-800 rounded-full transition-colors">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div id="pixel-values" class="space-y-2.5"></div>
+            <div id="pixel-values" class="space-y-2"></div>
         </div>
 
-        <!-- Toast for Errors -->
-        <div id="error-toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[3000] bg-rose-500 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-lg transition-all transform translate-y-2 hidden">
-            <span id="error-message"></span>
+        <!-- Notification Center -->
+        <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[3000] bg-slate-900 border border-slate-700 text-white px-6 py-3 rounded-full text-sm font-medium shadow-2xl transition-all transform opacity-0 pointer-events-none">
+            <span id="toast-message"></span>
         </div>
     </main>
 
+    <!-- Dependencies -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/georaster"></script>
-    <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
-    <script src="https://unpkg.com/chroma-js"></script>
+    <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+    <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
+    <script src="https://unpkg.com/chroma-js@2.4.2/chroma.min.js"></script>
 
     <script>
         (function() {
-            var map, currentLayer, geoRaster;
-            var spinner = document.getElementById('loading-spinner');
-            var layerSelect = document.getElementById('layer-select');
-            var dataPanel = document.getElementById('data-panel');
-            var pixelValuesDiv = document.getElementById('pixel-values');
-            var coordsDisplay = document.getElementById('coords-display');
-            var errorToast = document.getElementById('error-toast');
-            var errorMessage = document.getElementById('error-message');
+            let map, currentLayer, geoRaster;
+            const spinner = document.getElementById('loading-spinner');
+            const layerSelect = document.getElementById('layer-select');
+            const dataPanel = document.getElementById('data-panel');
+            const pixelValuesDiv = document.getElementById('pixel-values');
+            const coordsDisplay = document.getElementById('coords-display');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
 
-            // Force a valid URL by prepending the current location path
-            var COG_FILENAME = "material_areas_km2.tif";
-            var BAND_NAMES = ["Gold", "Copper", "Iron", "Lithium", "Silver", "Cobalt"];
+            const COG_FILENAME = "material_areas_km2.tif";
+            const BAND_NAMES = ["Gold", "Copper", "Iron", "Lithium", "Silver", "Cobalt"];
 
-            function showError(msg) {
-                errorMessage.textContent = msg;
-                errorToast.classList.remove('hidden', 'translate-y-2');
-                setTimeout(function() { 
-                    errorToast.classList.add('hidden', 'translate-y-2'); 
-                }, 6000);
+            function showToast(msg, isError = false) {
+                toastMessage.textContent = msg;
+                toast.classList.remove('opacity-0', 'pointer-events-none');
+                toast.classList.add('opacity-100');
+                if (isError) toast.classList.add('border-rose-500/50', 'text-rose-400');
+                
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0', 'pointer-events-none');
+                }, 4000);
             }
 
             async function init() {
-                map = L.map('map', { center: [20, 0], zoom: 3, zoomControl: false, attributionControl: false });
+                // Dark Matter Base Map
+                map = L.map('map', { 
+                    center: [20, 0], 
+                    zoom: 3, 
+                    zoomControl: false, 
+                    attributionControl: false,
+                    maxBounds: [[-90, -180], [90, 180]]
+                });
                 
-                L.control.attribution({ position: 'bottomleft' }).addTo(map);
+                L.control.attribution({ position: 'bottomleft', prefix: 'minethegap.eu' }).addTo(map);
                 L.control.zoom({ position: 'topright' }).addTo(map);
 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                    maxZoom: 10
                 }).addTo(map);
 
                 try {
                     spinner.classList.remove('hidden');
                     
-                    // Use a more robust way to construct the path to the TIF file
-                    var url = window.location.href.split('?')[0].split('#')[0];
-                    if (url.endsWith('.html')) {
-                        url = url.substring(0, url.lastIndexOf('/'));
-                    }
-                    if (!url.endsWith('/')) url += '/';
-                    var fetchUrl = url + COG_FILENAME;
+                    // Direct Path Resolution
+                    const currentUrl = new URL(window.location.href);
+                    const basePath = currentUrl.pathname.substring(0, currentUrl.pathname.lastIndexOf('/') + 1);
+                    const cogUrl = `${currentUrl.origin}${basePath}${COG_FILENAME}`;
 
-                    console.log("Fetching COG from:", fetchUrl);
+                    console.log("Attempting to load COG from:", cogUrl);
                     
-                    var response = await fetch(fetchUrl);
-                    if (!response.ok) {
-                        // Fallback to simple relative path if absolute resolution fails
-                        response = await fetch('./' + COG_FILENAME);
-                    }
-                    
-                    if (!response.ok) throw new Error("COG file not found. Ensure it is in the same folder as the HTML.");
+                    const response = await fetch(cogUrl);
+                    if (!response.ok) throw new Error("COG file not accessible.");
 
-                    var arrayBuffer = await response.arrayBuffer();
+                    const arrayBuffer = await response.arrayBuffer();
                     geoRaster = await parseGeoraster(arrayBuffer);
 
+                    // Setup UI based on file
                     layerSelect.innerHTML = '';
-                    for (var i = 0; i < geoRaster.numberOfRasters; i++) {
-                        var option = document.createElement('option');
+                    for (let i = 0; i < geoRaster.numberOfRasters; i++) {
+                        const option = document.createElement('option');
                         option.value = i;
-                        option.textContent = BAND_NAMES[i] || ("Band " + (i + 1));
+                        option.textContent = BAND_NAMES[i] || `Layer ${i + 1}`;
                         layerSelect.appendChild(option);
                     }
 
+                    // Initial display
                     updateLayer(0);
                     
                     if (geoRaster.xmin !== undefined) {
@@ -146,7 +153,7 @@
                     spinner.classList.add('hidden');
                 } catch (err) {
                     spinner.classList.add('hidden');
-                    showError("Map Error: " + err.message);
+                    showToast("Error loading dataset: " + err.message, true);
                     console.error(err);
                 }
 
@@ -156,20 +163,23 @@
             function updateLayer(bandIndex) {
                 if (currentLayer) map.removeLayer(currentLayer);
 
-                var min = geoRaster.mins[bandIndex] || 0;
-                var max = geoRaster.maxs[bandIndex] || 1000;
+                // Use better statistical bounds for color scaling
+                const min = geoRaster.mins[bandIndex] || 0;
+                const max = geoRaster.maxs[bandIndex] || 1000;
                 
-                var scale = chroma.scale(['rgba(34, 197, 94, 0.2)', '#22c55e', '#3b82f6', '#fbbf24']).domain([min, max]);
+                // Mineral-focused palette: Green -> Blue -> Amber (Hotspots)
+                const scale = chroma.scale(['rgba(16, 185, 129, 0.1)', '#10b981', '#3b82f6', '#f59e0b', '#ef4444'])
+                                   .domain([min, max * 0.1, max * 0.4, max * 0.7, max]);
 
                 currentLayer = new GeoRasterLayer({
                     georaster: geoRaster,
-                    opacity: 0.8,
-                    pixelValuesToColorFn: function(values) {
-                        var val = values[bandIndex];
+                    opacity: 0.85,
+                    pixelValuesToColorFn: (values) => {
+                        const val = values[bandIndex];
                         if (val === geoRaster.noDataValue || isNaN(val) || val <= 0) return null;
                         return scale(val).hex();
                     },
-                    resolution: 128
+                    resolution: 64 // Faster rendering for 200K file
                 });
                 
                 currentLayer.addTo(map);
@@ -177,39 +187,48 @@
 
             function handleMapClick(e) {
                 if (!geoRaster) return;
-                var lat = e.latlng.lat;
-                var lng = e.latlng.lng;
-                var x = Math.floor((lng - geoRaster.xmin) / geoRaster.pixelWidth);
-                var y = Math.floor((geoRaster.ymax - lat) / geoRaster.pixelHeight);
+                
+                const { lat, lng } = e.latlng;
+                const x = Math.floor((lng - geoRaster.xmin) / geoRaster.pixelWidth);
+                const y = Math.floor((geoRaster.ymax - lat) / geoRaster.pixelHeight);
 
                 if (x >= 0 && x < geoRaster.width && y >= 0 && y < geoRaster.height) {
-                    dataPanel.classList.remove('hidden');
-                    coordsDisplay.textContent = lat.toFixed(3) + "°, " + lng.toFixed(3) + "°";
-                    pixelValuesDiv.innerHTML = '';
+                    let hasData = false;
+                    const results = [];
                     
-                    var foundData = false;
-                    for (var i = 0; i < geoRaster.numberOfRasters; i++) {
-                        var val = geoRaster.values[i][y][x];
-                        var label = BAND_NAMES[i] || ("Layer " + (i + 1));
-                        var isSelected = (layerSelect.value == i);
-                        
-                        if (val !== geoRaster.noDataValue && !isNaN(val) && val > 0) foundData = true;
+                    for (let i = 0; i < geoRaster.numberOfRasters; i++) {
+                        const val = geoRaster.values[i][y][x];
+                        const isValid = (val !== geoRaster.noDataValue && !isNaN(val) && val > 0);
+                        if (isValid) hasData = true;
 
-                        var row = document.createElement('div');
-                        row.className = "flex justify-between items-center p-2.5 rounded-xl border " + (isSelected ? 'bg-blue-500/10 border-blue-500/50' : 'bg-slate-800/40 border-transparent');
-                        row.innerHTML = '<span class="text-xs ' + (isSelected ? 'font-bold text-blue-300' : 'text-slate-400') + '">' + label + '</span>' +
-                                        '<span class="text-sm font-mono font-bold ' + (val > 0 ? 'text-emerald-400' : 'text-slate-600') + '">' +
-                                        ((val === geoRaster.noDataValue || val <= 0 || isNaN(val)) ? '0' : val.toLocaleString(undefined, {maximumFractionDigits: 2})) +
-                                        '<span class="text-[10px] font-normal opacity-60 ml-0.5">km²</span></span>';
-                        pixelValuesDiv.appendChild(row);
+                        results.push({
+                            label: BAND_NAMES[i] || `Layer ${i + 1}`,
+                            value: isValid ? val : 0,
+                            isSelected: layerSelect.value == i
+                        });
                     }
-                    if (!foundData) dataPanel.classList.add('hidden');
+
+                    if (hasData) {
+                        dataPanel.classList.remove('hidden');
+                        coordsDisplay.textContent = `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+                        pixelValuesDiv.innerHTML = results.map(res => `
+                            <div class="flex justify-between items-center p-2.5 rounded-xl border ${res.isSelected ? 'bg-blue-500/10 border-blue-500/30' : 'bg-slate-800/40 border-transparent'}">
+                                <span class="text-[11px] ${res.isSelected ? 'font-bold text-blue-300' : 'text-slate-400'}">${res.label}</span>
+                                <span class="text-xs font-mono font-bold ${res.value > 0 ? 'text-emerald-400' : 'text-slate-600'}">
+                                    ${res.value.toLocaleString(undefined, {maximumFractionDigits: 3})}
+                                    <span class="text-[9px] font-normal opacity-50 ml-0.5">km²</span>
+                                </span>
+                            </div>
+                        `).join('');
+                    } else {
+                        dataPanel.classList.add('hidden');
+                    }
                 } else {
                     dataPanel.classList.add('hidden');
                 }
             }
 
-            layerSelect.addEventListener('change', function(e) {
+            layerSelect.addEventListener('change', (e) => {
                 updateLayer(parseInt(e.target.value));
             });
 
