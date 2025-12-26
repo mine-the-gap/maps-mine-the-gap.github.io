@@ -73,116 +73,148 @@
     <script src="https://unpkg.com/chroma-js"></script>
 
     <script>
-        let map, currentLayer, geoRaster;
-        const spinner = document.getElementById('loading-spinner');
-        const layerSelect = document.getElementById('layer-select');
-        const dataPanel = document.getElementById('data-panel');
-        const pixelValuesDiv = document.getElementById('pixel-values');
-        const coordsDisplay = document.getElementById('coords-display');
-        const errorToast = document.getElementById('error-toast');
-        const errorMessage = document.getElementById('error-message');
+        (function() {
+            var map, currentLayer, geoRaster;
+            var spinner = document.getElementById('loading-spinner');
+            var layerSelect = document.getElementById('layer-select');
+            var dataPanel = document.getElementById('data-panel');
+            var pixelValuesDiv = document.getElementById('pixel-values');
+            var coordsDisplay = document.getElementById('coords-display');
+            var errorToast = document.getElementById('error-toast');
+            var errorMessage = document.getElementById('error-message');
 
-        const COG_URL = "material_areas_km2.tif";
-        const BAND_NAMES = ["Gold", "Copper", "Iron", "Lithium", "Silver", "Cobalt"];
+            // Force a valid URL by prepending the current location path
+            var COG_FILENAME = "material_areas_km2.tif";
+            var BAND_NAMES = ["Gold", "Copper", "Iron", "Lithium", "Silver", "Cobalt"];
 
-        function showError(msg) {
-            errorMessage.textContent = msg;
-            errorToast.classList.remove('hidden', 'translate-y-2');
-            setTimeout(() => errorToast.classList.add('hidden', 'translate-y-2'), 6000);
-        }
-
-        async function init() {
-            map = L.map('map', { center: [20, 0], zoom: 3, zoomControl: false, attributionControl: false });
-            
-            L.control.attribution({ position: 'bottomleft' }).addTo(map);
-            L.control.zoom({ position: 'topright' }).addTo(map);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-            }).addTo(map);
-
-            try {
-                spinner.classList.remove('hidden');
-                const response = await fetch(COG_URL);
-                if (!response.ok) throw new Error(`COG file not found: ${response.status}`);
-
-                const arrayBuffer = await response.arrayBuffer();
-                geoRaster = await parseGeoraster(arrayBuffer);
-
-                layerSelect.innerHTML = '';
-                for(let i = 0; i < geoRaster.numberOfRasters; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = BAND_NAMES[i] || `Band ${i + 1}`;
-                    layerSelect.appendChild(option);
-                }
-
-                updateLayer(0);
-                map.fitBounds([[geoRaster.ymin, geoRaster.xmin], [geoRaster.ymax, geoRaster.xmax]]);
-                spinner.classList.add('hidden');
-            } catch (err) {
-                spinner.classList.add('hidden');
-                showError("Map Error: " + err.message);
+            function showError(msg) {
+                errorMessage.textContent = msg;
+                errorToast.classList.remove('hidden', 'translate-y-2');
+                setTimeout(function() { 
+                    errorToast.classList.add('hidden', 'translate-y-2'); 
+                }, 6000);
             }
 
-            map.on('click', handleMapClick);
-        }
-
-        function updateLayer(bandIndex) {
-            if (currentLayer) map.removeLayer(currentLayer);
-
-            const min = geoRaster.mins[bandIndex];
-            const max = geoRaster.maxs[bandIndex];
-            
-            // Resource-specific color scale
-            const scale = chroma.scale(['rgba(0,0,0,0)', '#22c55e', '#3b82f6', '#eab308']).domain([min, max]);
-
-            currentLayer = new GeoRasterLayer({
-                georaster: geoRaster,
-                opacity: 0.85,
-                pixelValuesToColorFn: values => {
-                    const val = values[bandIndex];
-                    if (val === geoRaster.noDataValue || val <= 0 || isNaN(val)) return null;
-                    return scale(val).css();
-                },
-                resolution: 128
-            });
-            currentLayer.addTo(map);
-        }
-
-        function handleMapClick(e) {
-            const { lat, lng } = e.latlng;
-            const x = Math.floor((lng - geoRaster.xmin) / geoRaster.pixelWidth);
-            const y = Math.floor((geoRaster.ymax - lat) / geoRaster.pixelHeight);
-
-            if (x >= 0 && x < geoRaster.width && y >= 0 && y < geoRaster.height) {
-                dataPanel.classList.remove('hidden');
-                coordsDisplay.textContent = `${lat.toFixed(3)}°, ${lng.toFixed(3)}°`;
-                pixelValuesDiv.innerHTML = '';
+            async function init() {
+                map = L.map('map', { center: [20, 0], zoom: 3, zoomControl: false, attributionControl: false });
                 
-                for(let i = 0; i < geoRaster.numberOfRasters; i++) {
-                    const val = geoRaster.values[i][y][x];
-                    const label = BAND_NAMES[i] || `Layer ${i + 1}`;
-                    const isSelected = layerSelect.value == i;
-                    
-                    const row = document.createElement('div');
-                    row.className = `flex justify-between items-center p-2.5 rounded-xl border ${isSelected ? 'bg-blue-500/10 border-blue-500/50' : 'bg-slate-800/40 border-transparent'}`;
-                    row.innerHTML = `
-                        <span class="text-xs ${isSelected ? 'font-bold text-blue-300' : 'text-slate-400'}">${label}</span>
-                        <span class="text-sm font-mono font-bold ${val > 0 ? 'text-emerald-400' : 'text-slate-600'}">
-                            ${(val === geoRaster.noDataValue || val <= 0) ? '0' : val.toFixed(2)}
-                            <span class="text-[10px] font-normal opacity-60 ml-0.5">km²</span>
-                        </span>
-                    `;
-                    pixelValuesDiv.appendChild(row);
-                }
-            } else {
-                dataPanel.classList.add('hidden');
-            }
-        }
+                L.control.attribution({ position: 'bottomleft' }).addTo(map);
+                L.control.zoom({ position: 'topright' }).addTo(map);
 
-        layerSelect.addEventListener('change', (e) => updateLayer(parseInt(e.target.value)));
-        window.onload = init;
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                }).addTo(map);
+
+                try {
+                    spinner.classList.remove('hidden');
+                    
+                    // Use a more robust way to construct the path to the TIF file
+                    var url = window.location.href.split('?')[0].split('#')[0];
+                    if (url.endsWith('.html')) {
+                        url = url.substring(0, url.lastIndexOf('/'));
+                    }
+                    if (!url.endsWith('/')) url += '/';
+                    var fetchUrl = url + COG_FILENAME;
+
+                    console.log("Fetching COG from:", fetchUrl);
+                    
+                    var response = await fetch(fetchUrl);
+                    if (!response.ok) {
+                        // Fallback to simple relative path if absolute resolution fails
+                        response = await fetch('./' + COG_FILENAME);
+                    }
+                    
+                    if (!response.ok) throw new Error("COG file not found. Ensure it is in the same folder as the HTML.");
+
+                    var arrayBuffer = await response.arrayBuffer();
+                    geoRaster = await parseGeoraster(arrayBuffer);
+
+                    layerSelect.innerHTML = '';
+                    for (var i = 0; i < geoRaster.numberOfRasters; i++) {
+                        var option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = BAND_NAMES[i] || ("Band " + (i + 1));
+                        layerSelect.appendChild(option);
+                    }
+
+                    updateLayer(0);
+                    
+                    if (geoRaster.xmin !== undefined) {
+                        map.fitBounds([[geoRaster.ymin, geoRaster.xmin], [geoRaster.ymax, geoRaster.xmax]]);
+                    }
+                    
+                    spinner.classList.add('hidden');
+                } catch (err) {
+                    spinner.classList.add('hidden');
+                    showError("Map Error: " + err.message);
+                    console.error(err);
+                }
+
+                map.on('click', handleMapClick);
+            }
+
+            function updateLayer(bandIndex) {
+                if (currentLayer) map.removeLayer(currentLayer);
+
+                var min = geoRaster.mins[bandIndex] || 0;
+                var max = geoRaster.maxs[bandIndex] || 1000;
+                
+                var scale = chroma.scale(['rgba(34, 197, 94, 0.2)', '#22c55e', '#3b82f6', '#fbbf24']).domain([min, max]);
+
+                currentLayer = new GeoRasterLayer({
+                    georaster: geoRaster,
+                    opacity: 0.8,
+                    pixelValuesToColorFn: function(values) {
+                        var val = values[bandIndex];
+                        if (val === geoRaster.noDataValue || isNaN(val) || val <= 0) return null;
+                        return scale(val).hex();
+                    },
+                    resolution: 128
+                });
+                
+                currentLayer.addTo(map);
+            }
+
+            function handleMapClick(e) {
+                if (!geoRaster) return;
+                var lat = e.latlng.lat;
+                var lng = e.latlng.lng;
+                var x = Math.floor((lng - geoRaster.xmin) / geoRaster.pixelWidth);
+                var y = Math.floor((geoRaster.ymax - lat) / geoRaster.pixelHeight);
+
+                if (x >= 0 && x < geoRaster.width && y >= 0 && y < geoRaster.height) {
+                    dataPanel.classList.remove('hidden');
+                    coordsDisplay.textContent = lat.toFixed(3) + "°, " + lng.toFixed(3) + "°";
+                    pixelValuesDiv.innerHTML = '';
+                    
+                    var foundData = false;
+                    for (var i = 0; i < geoRaster.numberOfRasters; i++) {
+                        var val = geoRaster.values[i][y][x];
+                        var label = BAND_NAMES[i] || ("Layer " + (i + 1));
+                        var isSelected = (layerSelect.value == i);
+                        
+                        if (val !== geoRaster.noDataValue && !isNaN(val) && val > 0) foundData = true;
+
+                        var row = document.createElement('div');
+                        row.className = "flex justify-between items-center p-2.5 rounded-xl border " + (isSelected ? 'bg-blue-500/10 border-blue-500/50' : 'bg-slate-800/40 border-transparent');
+                        row.innerHTML = '<span class="text-xs ' + (isSelected ? 'font-bold text-blue-300' : 'text-slate-400') + '">' + label + '</span>' +
+                                        '<span class="text-sm font-mono font-bold ' + (val > 0 ? 'text-emerald-400' : 'text-slate-600') + '">' +
+                                        ((val === geoRaster.noDataValue || val <= 0 || isNaN(val)) ? '0' : val.toLocaleString(undefined, {maximumFractionDigits: 2})) +
+                                        '<span class="text-[10px] font-normal opacity-60 ml-0.5">km²</span></span>';
+                        pixelValuesDiv.appendChild(row);
+                    }
+                    if (!foundData) dataPanel.classList.add('hidden');
+                } else {
+                    dataPanel.classList.add('hidden');
+                }
+            }
+
+            layerSelect.addEventListener('change', function(e) {
+                updateLayer(parseInt(e.target.value));
+            });
+
+            window.addEventListener('load', init);
+        })();
     </script>
 </body>
 </html>
