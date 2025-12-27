@@ -3,7 +3,7 @@
 <head>
     <title>Global Mining Explorer | MINE-THE-GAP</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- Leaflet & GeoTIFF.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -17,7 +17,7 @@
             --accent-red: #e63946;
             --yellow-light: #f6ae2d; 
             --text-main: #3c4043;
-            --bg-glass: rgba(255, 255, 255, 0.94);
+            --bg-glass: rgba(255, 255, 255, 0.96);
             --header-height: 50px; 
         }
 
@@ -40,7 +40,7 @@
             display: flex; 
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px; 
+            padding: 0 20px; 
             z-index: 2000; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -50,14 +50,14 @@
             color: #ffffff; 
             text-decoration: none; 
             font-weight: 900;
-            font-size: 1.2rem; 
+            font-size: 1.1rem; 
             letter-spacing: 0.5px;
         }
 
         .brand span { color: var(--yellow-light); }
         
         .erc-logo { 
-            height: 34px; 
+            height: 30px; 
             width: auto;
             object-fit: contain;
         }
@@ -68,22 +68,29 @@
             margin-top: var(--header-height); 
         }
         
+        /* Floating UI Panel with Auto-Scaling */
         #ui-panel {
             position: absolute; 
-            top: calc(var(--header-height) + 10px); 
-            right: 15px; 
+            top: calc(var(--header-height) + 12px); 
+            right: 12px; 
             z-index: 1000;
             background: var(--bg-glass); 
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: 15px; 
-            border-radius: 8px; 
+            border-radius: 10px; 
             border: 1px solid rgba(0,0,0,0.1);
-            width: 280px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            
+            /* Sizing constraints */
+            width: 280px;
+            max-width: 90vw;
+            max-height: calc(100vh - var(--header-height) - 30px);
+            
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
             display: flex;
             flex-direction: column;
-            max-height: calc(90vh - var(--header-height));
+            overflow-y: auto; /* Internal scrolling if content is long */
+            transition: all 0.2s ease-in-out;
         }
 
         .panel-title { 
@@ -96,6 +103,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .info-btn {
@@ -103,12 +111,12 @@
             border: 1.5px solid #5f6368;
             color: #5f6368;
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
             cursor: pointer;
             font-weight: bold;
         }
@@ -122,33 +130,38 @@
             background: white; 
             cursor: pointer; 
             outline: none;
+            flex-shrink: 0;
         }
 
         .legend {
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 4px;
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.02);
+            padding: 8px;
+            border-radius: 6px;
         }
         .legend-item {
             display: flex;
             align-items: center;
-            font-size: 11px;
+            font-size: 10px;
             color: #5f6368;
         }
         .swatch {
             width: 12px;
             height: 12px;
-            margin-right: 8px;
+            margin-right: 6px;
             border-radius: 2px;
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            flex-shrink: 0;
         }
         
         #pixel-info { 
             font-size: 13px; 
             margin-top: 12px; 
-            overflow-y: auto; 
-            border-top: 1px solid #ddd; 
+            border-top: 1px solid #eee; 
             padding-top: 12px; 
             flex-grow: 1;
         }
@@ -157,26 +170,27 @@
             display: flex; 
             justify-content: space-between; 
             padding: 4px 0; 
-            border-bottom: 1px solid rgba(0,0,0,0.05); 
+            border-bottom: 1px solid rgba(0,0,0,0.03); 
         }
         
         .val-num { 
             font-weight: 700; 
-            font-family: monospace; 
+            font-family: monospace;
+            color: var(--accent-red);
         }
 
         /* Modal Styles */
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.75);
             z-index: 3000;
             display: flex;
             align-items: center;
             justify-content: center;
             visibility: hidden;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         #modal-overlay.active {
             visibility: visible;
@@ -185,70 +199,61 @@
         #data-modal {
             background: white;
             width: 90%;
-            max-width: 600px;
-            max-height: 85vh;
+            max-width: 550px;
+            max-height: 80vh;
             border-radius: 12px;
-            padding: 30px;
+            padding: 25px;
             overflow-y: auto;
             position: relative;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
-        #data-modal h2 { margin-top: 0; font-size: 1.5rem; color: var(--primary-dark); }
-        #data-modal p { line-height: 1.6; font-size: 0.95rem; color: #444; }
+        #data-modal h2 { margin-top: 0; font-size: 1.3rem; }
+        #data-modal p { line-height: 1.5; font-size: 0.9rem; color: #444; }
         .modal-close {
-            position: sticky;
-            bottom: -30px;
-            margin: 20px -30px -30px -30px;
-            background: #f8f9fa;
-            border-top: 1px solid #eee;
-            padding: 15px;
+            margin-top: 20px;
             text-align: right;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
         }
         .btn-close {
             background: var(--primary-dark);
             color: white;
             border: none;
-            padding: 8px 25px;
-            border-radius: 4px;
+            padding: 8px 20px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
         }
         .warning-box {
             background: #fff8e1;
             border-left: 4px solid #ffc107;
-            padding: 15px;
+            padding: 12px;
             margin: 15px 0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            border-radius: 4px;
         }
         .code-block {
             background: #f1f3f4;
-            padding: 8px 12px;
+            padding: 8px;
             border-radius: 4px;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             word-break: break-all;
             margin: 10px 0;
             display: block;
             border: 1px solid #ddd;
         }
-        .data-links {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px dashed #ccc;
-        }
-        .data-links a {
-            display: inline-block;
-            margin-right: 15px;
-            color: var(--header-bg);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        .data-links a:hover { text-decoration: underline; }
 
+        /* Mobile specific tweaks */
         @media (max-width: 600px) {
-            #ui-panel { width: calc(100vw - 30px); bottom: 15px; max-height: 40vh; top: auto; }
-            #data-modal { padding: 20px; width: 85%; }
+            #ui-panel {
+                width: 260px;
+                right: 10px;
+                top: calc(var(--header-height) + 10px);
+                padding: 12px;
+            }
+            .legend {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
@@ -261,24 +266,25 @@
 
 <div id="ui-panel">
     <div class="panel-title">
-        Mining land use by material
+        Mining land use
         <button class="info-btn" onclick="toggleModal(true)">?</button>
     </div>
     <select id="layer-select"><option>Initializing...</option></select>
     
     <div class="legend">
-        <div class="legend-item"><div class="swatch" style="background: #FFFFCC;"></div> < 5 km²</div>
-        <div class="legend-item"><div class="swatch" style="background: #FFEDA0;"></div> 5 - 20 km²</div>
-        <div class="legend-item"><div class="swatch" style="background: #FED976;"></div> 20 - 50 km²</div>
-        <div class="legend-item"><div class="swatch" style="background: #FEB24C;"></div> 50 - 100 km²</div>
-        <div class="legend-item"><div class="swatch" style="background: #FD8D3C;"></div> 100 - 250 km²</div>
-        <div class="legend-item"><div class="swatch" style="background: #F03B20;"></div> 250 - 500 km²</div>
-        <div class="legend-item"><div class="swatch" style="background: #BD0026;"></div> > 500 km²</div>
+        <div class="legend-item"><div class="swatch" style="background: #FFFFCC;"></div> < 5</div>
+        <div class="legend-item"><div class="swatch" style="background: #FFEDA0;"></div> 5-20</div>
+        <div class="legend-item"><div class="swatch" style="background: #FED976;"></div> 20-50</div>
+        <div class="legend-item"><div class="swatch" style="background: #FEB24C;"></div> 50-100</div>
+        <div class="legend-item"><div class="swatch" style="background: #FD8D3C;"></div> 100-250</div>
+        <div class="legend-item"><div class="swatch" style="background: #F03B20;"></div> 250-500</div>
+        <div class="legend-item"><div class="swatch" style="background: #BD0026;"></div> > 500</div>
+        <div class="legend-item" style="font-style: italic; opacity: 0.6;">km²</div>
     </div>
 
     <div id="pixel-info">
-        <div style="color: #70757a; font-style: italic; font-size: 12px; line-height: 1.5;">
-            Click on the map to query mining land use across 86 materials.
+        <div style="color: #70757a; font-style: italic; font-size: 11px; line-height: 1.4;">
+            Click on the map to sample material extraction areas.
         </div>
     </div>
 </div>
@@ -286,25 +292,23 @@
 <!-- Information Modal -->
 <div id="modal-overlay">
     <div id="data-modal">
-        <h2>About the data</h2>
-        <p>This interactive map provides an overview of the mining area linked to the extraction of different materials globally.</p>
+        <h2>Global Mining Land Use</h2>
+        <p>This interactive map visualises estimated spatial mining areas for 86 materials globally, derived from mining cluster data.</p>
 
         <p><strong>Citation:</strong><br>
         Maus, V., et al. (2025). A Data-Driven Approach to Mapping Global Commodity-Specific Mining Land-Use. SSRN. 
-        <a href="https://dx.doi.org/10.2139/ssrn.5408302" target="_blank" style="color:var(--header-bg)">https://dx.doi.org/10.2139/ssrn.5408302</a></p>
+        <a href="https://dx.doi.org/10.2139/ssrn.5408302" target="_blank" style="color:#000">https://dx.doi.org/10.2139/ssrn.5408302</a></p>
         
         <div class="warning-box">
-            <strong>Important: Layers are not additive.</strong><br>
-            The values for different material layers <u>cannot</u> be summed to calculate total mining area. In many locations, multiple materials are co-extracted from the same geographic area. Adding these values would result in significant double-counting.
+            <strong>Note on Layers:</strong> Material layers are not additive. Many locations co-extract multiple materials from the same footprint.
         </div>
 
         <div class="data-links">
-            <p><strong>Data licence:</strong> <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color:var(--header-bg)">CC BY-NC-SA 4.0</a></p>
+            <p><strong>Licence:</strong> <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></p>
             <p><a href="assets/data/README.txt" target="_blank">View README</a></p>
             <p><a href="assets/data/material_areas_km2.tif" download>Download (.tif) file</a></p>
-            <p>Direct access to Cloud Optimized GeoTIFF (COG) via the URL:</p>
+            <p>Direct COG access:</p>
             <span class="code-block">https://maps.minethegap.eu/assets/data/material_areas_km2.tif</span>
-            
         </div>
 
         <div class="modal-close">
@@ -324,13 +328,20 @@
         document.getElementById('modal-overlay').classList.toggle('active', show);
     }
 
-    const map = L.map('map', { center: [20, 0], zoom: 2, minZoom: 2, maxZoom: 12, zoomControl: false });
-    map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>');
+    const map = L.map('map', { 
+        center: [20, 0], 
+        zoom: 2, 
+        minZoom: 2, 
+        maxZoom: 12, 
+        zoomControl: false 
+    });
+    
+    map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     const baseLayers = {
         "Dark Map": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' 
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' 
         }).addTo(map),
         "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
             attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community' 
@@ -410,11 +421,14 @@
     async function handleMapClick(e) {
         if (clickMarker) map.removeLayer(clickMarker);
         clickMarker = L.marker(e.latlng).addTo(map);
+        
         const info = document.getElementById('pixel-info');
-        info.innerHTML = '<div style="color:#888; font-style:italic; padding: 10px 0;">Sampling all layers...</div>';
+        info.innerHTML = '<div style="color:#888; font-style:italic; padding: 10px 0;">Sampling layers...</div>';
+
         const rX = Math.floor((e.latlng.lng - origin[0]) / res[0]);
         const rY = Math.floor((e.latlng.lat - origin[1]) / res[1]);
         if (rX < 0 || rX >= width || rY < 0 || rY >= height) return;
+
         const fullImage = await tiff.getImage(0);
         const pixelSample = await fullImage.readRasters({ window: [rX, rY, rX + 1, rY + 1] });
         let html = ""; let foundAny = false;
@@ -425,7 +439,7 @@
                 html += `<div class="val-row"><span>${m.replace(/_/g, ' ')}</span><span class="val-num">${(val/10).toFixed(1)} km²</span></div>`;
             }
         });
-        info.innerHTML = foundAny ? html : "No mining detected.";
+        info.innerHTML = foundAny ? html : "No material detected.";
     }
 
     window.onload = initMapTool;
