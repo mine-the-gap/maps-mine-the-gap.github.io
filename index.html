@@ -266,7 +266,7 @@
 
 <div id="ui-panel">
     <div class="panel-title">
-        Mining land use
+        Global Mining Area By Material
         <button class="info-btn" onclick="toggleModal(true)">?</button>
     </div>
     <select id="layer-select"><option>Initializing...</option></select>
@@ -292,15 +292,16 @@
 <!-- Information Modal -->
 <div id="modal-overlay">
     <div id="data-modal">
-        <h2>Global Mining Land Use</h2>
-        <p>This interactive map visualises estimated spatial mining areas for 86 materials globally, derived from mining cluster data.</p>
+        <h2>Global Mining Area By Material</h2>
+        <p>This interactive map provides an overview of the mining area linked to the extraction of different materials globally.</p>
 
         <p><strong>Citation:</strong><br>
         Maus, V., et al. (2025). A Data-Driven Approach to Mapping Global Commodity-Specific Mining Land-Use. SSRN. 
         <a href="https://dx.doi.org/10.2139/ssrn.5408302" target="_blank" style="color:#000">https://dx.doi.org/10.2139/ssrn.5408302</a></p>
         
         <div class="warning-box">
-            <strong>Note on Layers:</strong> Material layers are not additive. Many locations co-extract multiple materials from the same footprint.
+            <strong>Important: Layers are not additive.</strong><br>
+            The values for different material layers <u>cannot</u> be summed to calculate total mining area. In many locations, multiple materials are co-extracted from the same geographic area. Adding these values would result in significant double-counting.
         </div>
 
         <div class="data-links">
