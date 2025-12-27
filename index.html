@@ -7,105 +7,159 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/georaster"></script>
-    <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
-    <script src="https://unpkg.com/geoblaze"></script>
+    <script src="https://cdn.jsdelivr.net/npm/geotiff"></script>
 
     <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-        #map { height: 100vh; width: 100vw; background: #222; }
-        #controls {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); width: 250px;
+        body { margin: 0; padding: 0; font-family: sans-serif; background: #121212; }
+        #map { height: 100vh; width: 100vw; }
+        #ui-panel {
+            position: absolute; top: 15px; right: 15px; z-index: 1000;
+            background: white; padding: 18px; border-radius: 10px;
+            width: 280px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
-        select { width: 100%; padding: 8px; margin-top: 10px; cursor: pointer; }
-        .legend { font-size: 12px; color: #666; margin-bottom: 5px; }
+        select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ddd; font-weight: 500; }
+        #pixel-info { font-size: 13px; margin-top: 15px; max-height: 300px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        .val-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f9f9f9; }
+        .val-num { font-weight: bold; color: #e63946; }
+        .hint { font-size: 11px; color: #888; margin-top: 5px; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div id="controls">
-    <div class="legend">SELECT MATERIAL LAYER</div>
-    <select id="layer-select"></select>
-    <div id="pixel-info" style="margin-top: 15px; font-size: 13px; max-height: 300px; overflow-y: auto;">
-        Click map to query all layers
-    </div>
+<div id="ui-panel">
+    <div style="font-weight:bold; font-size: 14px; color: #333;">GLOBAL MATERIAL AREAS</div>
+    <select id="layer-select"><option>Initialising...</option></select>
+    <div id="pixel-info">Click the map to query data</div>
+    <div class="hint">Units: km² (scaled by 1/10)</div>
 </div>
 
 <div id="map"></div>
 
 <script>
-    const cogUrl = "material_areas_km2.tif"; // Ensure this is in the same folder
+    const cogUrl = "material_areas_km2.tif";
     const NODATA = 65535;
+    const materials = ["Gold", "Coal", "Silver", "Copper", "Iron", "Zinc", "Molybdenum", "Lead", "Potash", "Lithium", "Nickel", "Cobalt", "Platinum_Group_Element", "Diamonds", "Phosphate", "Aluminium", "Magnetite", "Uranium", "Manganese", "Magnesium", "Rhodium", "Potassium", "Spodumene", "Zircon", "Tin", "Heavy_Mineral_Sands", "Titanium", "Rare_Earth_Element", "Rhenium", "Tungsten", "Chromite", "Antimony", "Niobium", "Vanadium", "Tantalum", "Calcine", "Kaolin", "Leucoxene", "Graphite", "Chromium", "Bismuth", "Ferrochrome", "Rubidium", "Mercury", "Cadmium", "Selenium", "Tellurium", "Arsenic", "Ferronickel", "Sulphuric_Acid", "Gallium", "Strontium", "Germanium", "Indium", "Limestone", "Calcium_Carbonate", "Barite", "Ammonium_Sulfate", "Coke", "Crude_Oil", "Tar", "Sodium_Tripolyphosphate", "Asbestos", "Ferroniobium", "Beryllium", "Garnet", "Ferrovanadium", "Caesium", "Ferrotungsten", "Aggregates", "Hematite", "Dolomite", "Nepheline", "Silica", "Sulfur", "Marble", "Borates", "Rutile", "Vermiculite", "Pyrite", "Gypsum", "Frac_Sand", "Emerald", "Beryl", "Sapphire", "Fluorspar"];
+
+    const map = L.map('map', { 
+        center: [15, 0], 
+        zoom: 2,
+        minZoom: 1,
+        maxZoom: 10
+    });
     
-    // Layer descriptions from your metadata
-    const materialNames = ["Gold", "Coal", "Silver", "Copper", "Iron", "Zinc", "Molybdenum", "Lead", "Potash", "Lithium", "Nickel", "Cobalt", "Platinum_Group_Element", "Diamonds", "Phosphate", "Aluminium", "Magnetite", "Uranium", "Manganese", "Magnesium", "Rhodium", "Potassium", "Spodumene", "Zircon", "Tin", "Heavy_Mineral_Sands", "Titanium", "Rare_Earth_Element", "Rhenium", "Tungsten", "Chromite", "Antimony", "Niobium", "Vanadium", "Tantalum", "Calcine", "Kaolin", "Leucoxene", "Graphite", "Chromium", "Bismuth", "Ferrochrome", "Rubidium", "Mercury", "Cadmium", "Selenium", "Tellurium", "Arsenic", "Ferronickel", "Sulphuric_Acid", "Gallium", "Strontium", "Germanium", "Indium", "Limestone", "Calcium_Carbonate", "Barite", "Ammonium_Sulfate", "Coke", "Crude_Oil", "Tar", "Sodium_Tripolyphosphate", "Asbestos", "Ferroniobium", "Beryllium", "Garnet", "Ferrovanadium", "Caesium", "Ferrotungsten", "Aggregates", "Hematite", "Dolomite", "Nepheline", "Silica", "Sulfur", "Marble", "Borates", "Rutile", "Vermiculite", "Pyrite", "Gypsum", "Frac_Sand", "Emerald", "Beryl", "Sapphire", "Fluorspar"];
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+        attribution: '&copy; CartoDB' 
+    }).addTo(map);
 
-    // Initialize Map
-    const map = L.map('map').setView([20, 0], 2);
+    let tiff, image, rasterLayer, currentBandData;
+    let width, height, origin, res, bbox;
 
-    const baseMaps = {
-        "Map": L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map),
-        "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' })
-    };
-    L.control.layers(baseMaps).addto(map);
+    async function init() {
+        tiff = await GeoTIFF.fromUrl(cogUrl);
+        image = await tiff.getImage();
+        width = image.getWidth();
+        height = image.getHeight();
+        origin = image.getOrigin(); // [x, y]
+        res = image.getResolution(); // [x, y]
+        bbox = image.getBoundingBox();
 
-    let geoRasterLayer;
-    let currentRaster;
-
-    // Populate Dropdown
-    const select = document.getElementById('layer-select');
-    materialNames.forEach((name, index) => {
-        const opt = document.createElement('option');
-        opt.value = index;
-        opt.innerHTML = name.replace(/_/g, ' ');
-        select.appendChild(opt);
-    });
-
-    // Load COG
-    parseGeoraster(cogUrl).then(georaster => {
-        currentRaster = georaster;
-        updateLayer(0); // Start with Gold (Band 1)
-
-        // Dropdown interaction
-        select.onchange = (e) => updateLayer(parseInt(e.target.value));
-
-        // Click interaction
-        map.on('click', e => {
-            const results = geoblaze.identify(georaster, [e.latlng.lng, e.latlng.lat]);
-            let html = `<strong>Location:</strong> ${e.latlng.lat.toFixed(2)}, ${e.latlng.lng.toFixed(2)}<br><hr>`;
-            
-            if (results) {
-                results.forEach((val, i) => {
-                    if (val !== NODATA && val !== null) {
-                        const area = (val / 10).toFixed(1);
-                        html += `<div><strong>${materialNames[i].replace(/_/g, ' ')}:</strong> ${area} km²</div>`;
-                    }
-                });
-            } else {
-                html += "No data at this location.";
-            }
-            document.getElementById('pixel-info').innerHTML = html;
+        const select = document.getElementById('layer-select');
+        select.innerHTML = '';
+        materials.forEach((m, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = m.replace(/_/g, ' ');
+            select.appendChild(opt);
         });
-    });
 
-    function updateLayer(bandIndex) {
-        if (geoRasterLayer) map.removeLayer(geoRasterLayer);
+        select.onchange = async (e) => {
+            const band = await image.readRasters({ samples: [parseInt(e.target.value)] });
+            currentBandData = band[0];
+            rasterLayer.redraw();
+        };
 
-        geoRasterLayer = new GeoRasterLayer({
-            georaster: currentRaster,
-            opacity: 0.8,
-            pixelValuesToColorFn: values => {
-                const val = values[bandIndex];
-                if (val === NODATA || val === 0) return null;
-                // Simple Ramp: Higher density = deeper purple/red
-                return val > 1000 ? '#800026' : val > 500 ? '#E31A1C' : '#FEB24C';
-            },
-            resolution: 256
-        });
-        geoRasterLayer.addTo(map);
+        // Initialize first band (Gold)
+        const band = await image.readRasters({ samples: [0] });
+        currentBandData = band[0];
+
+        setupLayer();
+        map.on('click', onMapClick);
     }
+
+    function setupLayer() {
+        rasterLayer = L.gridLayer({ 
+            attribution: 'Maus et al. 2025',
+            opacity: 0.8
+        });
+
+        rasterLayer.createTile = function(coords) {
+            const tile = document.createElement('canvas');
+            tile.width = tile.height = 256;
+            const ctx = tile.getContext('2d');
+            const imgData = ctx.createImageData(256, 256);
+
+            // Calculate geographic bounds of this tile
+            const nw = map.unproject(coords.multiplyBy(256), coords.z);
+            const se = map.unproject(coords.add([1, 1]).multiplyBy(256), coords.z);
+
+            // Step through tile pixels
+            for (let y = 0; y < 256; y++) {
+                for (let x = 0; x < 256; x++) {
+                    // Map tile pixel back to geographic Lat/Lng
+                    const p = map.unproject(coords.multiplyBy(256).add([x, y]), coords.z);
+                    
+                    // Map Lat/Lng to Raster Index
+                    const rX = Math.floor((p.lng - origin[0]) / res[0]);
+                    const rY = Math.floor((p.lat - origin[1]) / res[1]);
+
+                    if (rX >= 0 && rX < width && rY >= 0 && rY < height) {
+                        const val = currentBandData[rY * width + rX];
+                        if (val !== NODATA && val > 0) {
+                            const idx = (y * 256 + x) * 4;
+                            imgData.data[idx] = 255;   // Red
+                            imgData.data[idx+1] = val > 1000 ? 50 : 180; // Green (Orange tint)
+                            imgData.data[idx+2] = 0;   // Blue
+                            imgData.data[idx+3] = 220; // Alpha
+                        }
+                    }
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            return tile;
+        };
+        rasterLayer.addTo(map);
+    }
+
+    async function onMapClick(e) {
+        const info = document.getElementById('pixel-info');
+        info.innerHTML = '<em>Sifting layers...</em>';
+        
+        const rX = Math.floor((e.latlng.lng - origin[0]) / res[0]);
+        const rY = Math.floor((e.latlng.lat - origin[1]) / res[1]);
+
+        if (rX < 0 || rX >= width || rY < 0 || rY >= height) {
+            info.innerHTML = "Outside coverage.";
+            return;
+        }
+
+        const fullImage = await tiff.getImage(0);
+        const pixelData = await fullImage.readRasters({
+            window: [rX, rY, rX + 1, rY + 1]
+        });
+
+        let html = `<strong>Location:</strong> ${e.latlng.lat.toFixed(1)}, ${e.latlng.lng.toFixed(1)}<hr>`;
+        let found = false;
+        materials.forEach((m, i) => {
+            const val = pixelData[i][0];
+            if (val !== NODATA && val > 0) {
+                found = true;
+                html += `<div class="val-row"><span>${m.replace(/_/g, ' ')}</span><span class="val-num">${(val/10).toFixed(1)}</span></div>`;
+            }
+        });
+        info.innerHTML = found ? html : "No data detected.";
+    }
+
+    init();
 </script>
 
 </body>
