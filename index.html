@@ -17,15 +17,18 @@
 
     <!-- Custom MINE-THE-GAP Styles -->
     <link rel="stylesheet" href="https://minethegap.eu/assets/css/mtg.css" />
-    <!-- <link rel="stylesheet" href="/assets/css/mtg.css" /> -->
-    <script src="https://minethegap.eu/assets/js/header.js" defer></script>
-    <link rel="stylesheet" href="assets/css/mtg-explorer.css" />
+    <link rel="stylesheet" href="assets/css/mtg-explore.css" />
 
 </head>
 <body>
 
-    <!-- Reusable Header Tag -->
-    <project-header></project-header>
+<!-- New Brand Overlay (Replaces Header) -->
+<a href="https://minethegap.eu" class="brand-overlay" title="Back to Home">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="color: var(--yellow-light);">
+        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+    </svg>
+    <span>MINE-THE-GAP</span>
+</a>
 
 <div id="ui-panel">
     <div class="panel-title">
@@ -60,19 +63,29 @@
         
         <div class="warning-box">
             <strong>Important: Layers are not additive.</strong><br>
-            The values for different material layers <u>cannot</u> be summed to calculate total mining area. In many locations, multiple materials are co-extracted from the same geographic area. Adding these values would result in significant double-counting.
+            The values for different material layers <strong>cannot</strong> be summed to calculate total mining area. In many locations, multiple materials are co-extracted from the same geographic area. Adding these values would result in significant double-counting.
         </div>
         <p><strong>Data license:</strong> <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></p>
 
         <p><strong>Citation:</strong> Maus, V., et al. (2025). A data-driven approach to mapping global commodity-specific mining land-use. Journal of Cleaner Production 
             <a href="https://doi.org/10.1016/j.jclepro.2025.147437" target="_blank">10.1016/j.jclepro.2025.147437</a>
+            (preprint: <a href="https://dx.doi.org/10.2139/ssrn.5408302" target="_blank">10.2139/ssrn.5408302</a>)
+
+
         </p>
 
         <div class="data-links">
             <p><a id="readme-link" href="#" target="_blank">View README</a></p>
             <p><a id="download-link" href="#" download>Download GeoTIFF file</a></p>
             <p>Direct access to Cloud Optimized GeoTIFF (COG):</p>
-            <span id="cog-link-display" class="code-block">Loading...</span>
+            <div style="position: relative; margin-top: 10px;">
+                <span id="cog-link-display" class="code-block" style="margin: 0; padding-right: 35px; min-height: 32px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                <button id="copy-btn" onclick="copyCogLink()" title="Copy to clipboard" style="position: absolute; top: 50%; right: 4px; transform: translateY(-50%); background: #ffffff; border: 1px solid #dadce0; border-radius: 4px; width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #70757a; transition: all 0.2s ease;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="modal-close">
@@ -99,6 +112,48 @@
 
     function toggleModal(show) {
         document.getElementById('modal-overlay').classList.toggle('active', show);
+    }
+
+    // Function to copy COG link to clipboard
+    function copyCogLink() {
+        const text = document.getElementById('cog-link-display').textContent;
+        
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '0';
+        
+        document.body.appendChild(textArea);
+        
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                const btn = document.getElementById('copy-btn');
+                
+                // Visual feedback: Switch to green checkmark
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                btn.style.color = "#137333";
+                btn.style.borderColor = "#137333";
+                btn.style.backgroundColor = "#e6f4ea";
+                
+                setTimeout(() => {
+                    // Revert to copy icon
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+                    btn.style.color = "#70757a";
+                    btn.style.borderColor = "#dadce0";
+                    btn.style.backgroundColor = "#ffffff";
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Unable to copy', err);
+        }
+        document.body.removeChild(textArea);
     }
 
     const map = L.map('map', { 
@@ -129,7 +184,7 @@
         "Dark Map": darkLayer,
         "Satellite": satLayer
     };
-    L.control.layers(baseLayers, null, { position: 'topleft' }).addTo(map);
+    L.control.layers(baseLayers, null, { position: 'bottomleft' }).addTo(map);
 
     map.on('baselayerchange', () => { if (rasterLayer) rasterLayer.bringToFront(); });
 

@@ -1,34 +1,80 @@
-/* MINE-THE-GAP Map-Specific Styles */
+/* ============================================================
+   MINE-THE-GAP Map-Specific Styles mtg-explore.css
+   ============================================================ */
+
+/* Override layout variables for full-screen map mode */
+:root {
+    --header-height: 0px; 
+}
 
 body { 
     background: #000; 
     overflow: hidden; 
 }
 
-/* mtg-explorer.css */
-
-/* mtg-explorer.css */
-
 #map { 
     position: absolute; 
-    top: 0;           /* Ignore the header height, go to absolute top */
+    top: 0;
     bottom: 0; 
     left: 0; 
     width: 100%; 
-    height: 100%;     /* Force full screen height */
+    height: 100%;
     margin: 0 !important; 
     z-index: 1; 
 }
 
-.leaflet-top {
-    top: var(--header-height) !important; 
+/* Brand Overlay Styles (Top Left) */
+.brand-overlay {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 2000; /* Above map and most controls */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--yellow-light);
+    font-family: var(--font-main);
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    background: rgba(26, 26, 28, 0.8); /* Dark background for contrast */
+    padding: 8px 14px;
+    border-radius: 30px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Floating UI Panel */
+.brand-overlay:hover {
+    background: rgba(26, 26, 28, 0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    color: #fff;
+}
+
+.brand-overlay svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--yellow-light); /* Use theme accent color */
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Push Leaflet controls down so they don't overlap the brand */
+.leaflet-top.leaflet-left {
+    top: 70px !important; /* Brand height + padding */
+}
+
+/* Floating UI Panel - Adjust position since header is gone */
 #ui-panel {
     position: absolute; 
-    top: calc(var(--header-height) + 12px); 
-    right: 12px; 
+    top: 15px; /* Aligned with brand */
+    right: 15px; 
     z-index: 1000;
     background: var(--bg-glass); 
     backdrop-filter: blur(12px);
@@ -38,7 +84,7 @@ body {
     border: 1px solid rgba(0,0,0,0.1);
     width: 280px;
     max-width: 90vw;
-    max-height: calc(100vh - var(--header-height) - 30px);
+    max-height: calc(100vh - 30px);
     box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     display: flex;
     flex-direction: column;
@@ -133,8 +179,17 @@ select {
     #ui-panel {
         width: 260px;
         right: 10px;
-        top: calc(var(--header-height) + 10px);
+        top: 10px;
         padding: 12px;
+    }
+    .brand-overlay {
+        top: 10px;
+        left: 10px;
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+    .leaflet-top.leaflet-left {
+        top: 60px !important;
     }
     .leaflet-bottom .leaflet-control {
         margin-bottom: 20px; 
@@ -142,13 +197,4 @@ select {
     .leaflet-right .leaflet-control {
         margin-right: 15px; 
     }
-}
-
-project-header {
-    display: block;
-    height: 0;
-    line-height: 0;
-    margin: 0;
-    padding: 0;
-    border: none;
 }
