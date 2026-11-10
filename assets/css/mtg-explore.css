@@ -432,6 +432,10 @@ a:hover { color: var(--accent-ink); }
 .contact-x svg { width: 16px; height: 16px; }
 .contact-intro { margin: 0 0 1rem; color: var(--muted); font-size: 0.95rem; }
 .contact-form { display: grid; gap: 0.85rem; }
+/* The [hidden] attribute must win over the display rules above (it hides the actions and notes). */
+.contact-dialog [hidden] { display: none !important; }
+/* A sent message stays readable but is clearly final. */
+.contact-form.is-sent input, .contact-form.is-sent textarea { opacity: 0.75; cursor: default; }
 .contact-field { display: grid; gap: 0.3rem; }
 .contact-field label { font-family: var(--font-head); font-weight: 600; font-size: 0.9rem; color: var(--ink-strong); }
 .contact-field .optional { font-family: var(--font-body); font-weight: 400; color: var(--muted); }

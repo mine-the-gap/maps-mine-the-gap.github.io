@@ -112,6 +112,14 @@
         counter.classList.toggle('is-short', n > 0 && n < MIN);
     }
 
+    // After a successful send the message stays in view but cannot be edited or sent again: the fields are disabled
+    // and Cancel / Send give way to the thank-you note and a single Close button.
+    function lock(on) {
+        Array.prototype.forEach.call(form.elements, function (el) { el.disabled = on; });
+        form.querySelector('.contact-actions').hidden = on;
+        form.classList.toggle('is-sent', on);
+    }
+
     function showError(text) {
         errorBox.textContent = text;
         errorBox.hidden = false;
@@ -121,8 +129,8 @@
         if (!dialog) build();
         if (!done.hidden) {           // after a sent message, start a fresh form
             form.reset();
+            lock(false);
             done.hidden = true;
-            form.hidden = false;
             updateCounter();
         }
         errorBox.hidden = true;
@@ -159,7 +167,7 @@
             );
         }).then(function (res) {
             if (res.status === 200 && res.data && res.data.ok === true) {
-                form.hidden = true;
+                lock(true);
                 done.querySelector('p').textContent = THANKS;
                 done.hidden = false;
                 done.querySelector('button').focus();
@@ -172,8 +180,8 @@
             showError(GENERIC_ERROR);
         }).then(function () {
             sending = false;
-            submitBtn.disabled = false;
             submitBtn.textContent = 'Send message';
+            if (done.hidden) submitBtn.disabled = false;  // still sendable unless it was sent
         });
     }
 
