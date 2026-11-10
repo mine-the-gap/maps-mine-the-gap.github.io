@@ -1,105 +1,233 @@
 /* ============================================================
-   MINE-THE-GAP Map-Specific Styles mtg-explore.css
+   MINE-THE-GAP Maps — mtg-explore.css
+   Self-contained: the identity tokens are duplicated from
+   minethegap.eu/assets/css/mtg.css (and the labelling app) so this
+   site needs no stylesheet from another origin.
+   "graphite + signal amber", self-hosted Archivo + Hanken Grotesk.
    ============================================================ */
+@font-face { font-family: "Hanken Grotesk"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(../fonts/hanken.woff2) format("woff2"); }
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 100 900; font-display: swap; src: url(../fonts/archivo.woff2) format("woff2"); }
 
-/* Override layout variables for full-screen map mode */
 :root {
-    --header-height: 0px; 
+    --fg: #1a1e24;
+    --muted: #6a727c;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --line: #e4e7ec;
+    --soft: #f3f6f7;
+    --ink-strong: #181c22;
+    --header-bg: #181c22;
+    --header-fg: #e9ebee;
+    --accent: #f0a93a;
+    --accent-dark: #dd9622;
+    --on-accent: #231604;
+    --accent-ink: #8a5a06;
+    --accent-tint: rgba(240, 169, 58, 0.14);
+    --error: #b42318;
+    --ok: #137333;
+    --ok-tint: #e6f4ea;
+    --glass: rgba(255, 255, 255, 0.95);
+    --pill: rgba(24, 28, 34, 0.92);
+    --font-head: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color-scheme: light;
 }
 
-body { 
-    background: #000; 
-    overflow: hidden; 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fg: #e6e8eb;
+        --muted: #9aa3ad;
+        --bg: #111418;
+        --card: #1a1e24;
+        --line: #2a3038;
+        --soft: #1f242b;
+        --ink-strong: #f1f3f5;
+        --header-bg: #181c22;
+        --header-fg: #e9ebee;
+        --accent-dark: #e4a233;
+        --accent-ink: #f0a93a;
+        --accent-tint: rgba(240, 169, 58, 0.12);
+        --error: #ff8077;
+        --ok: #7fd29a;
+        --ok-tint: #17301f;
+        --glass: rgba(26, 30, 36, 0.94);
+        color-scheme: dark;
+    }
 }
 
-#map { 
-    position: absolute; 
-    top: 0;
-    bottom: 0; 
-    left: 0; 
-    width: 100%; 
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--fg);
+    background: #000;
+    overflow: hidden;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-head); color: var(--ink-strong); }
+
+a { color: var(--ink-strong); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--accent-ink); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.is-hidden { display: none !important; }
+
+/* Off-screen (not display:none) so bots still see the honeypot field. */
+.visually-hidden {
+    position: absolute !important;
+    left: -10000px !important;
+    top: auto !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+}
+
+/* ---- Buttons ---- */
+.btn-primary, .btn-close, .btn-secondary {
+    display: inline-block;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    padding: 0.6rem 1.15rem;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.btn-primary, .btn-close { color: var(--on-accent); background: var(--accent); border: 1px solid var(--accent); }
+.btn-primary:hover, .btn-close:hover { color: var(--on-accent); background: var(--accent-dark); border-color: var(--accent-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: progress; }
+.btn-secondary { color: var(--fg); background: var(--card); border: 1px solid var(--line); }
+.btn-secondary:hover { color: var(--accent-ink); border-color: var(--accent); }
+
+/* ---- Map ---- */
+#map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
     height: 100%;
-    margin: 0 !important; 
-    z-index: 1; 
+    margin: 0;
+    z-index: 1;
+    background: #0e1013;
 }
+.leaflet-container { font-family: var(--font-body); }
 
-/* Brand Overlay Styles (Top Left) */
+/* ---- Brand pill (top left) ---- */
 .brand-overlay {
     position: absolute;
     top: 15px;
     left: 15px;
-    z-index: 2000; /* Above map and most controls */
+    z-index: 2000;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 0.5rem;
     text-decoration: none;
-    color: var(--yellow-light);
-    font-family: var(--font-main);
-    font-weight: 900;
-    font-size: 1.1rem;
-    letter-spacing: 0.5px;
-    background: rgba(26, 26, 28, 0.8); /* Dark background for contrast */
-    padding: 8px 14px;
-    border-radius: 30px;
+    color: var(--header-fg);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    background: var(--pill);
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transition: all 0.2s ease;
-    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background 0.2s ease, transform 0.2s ease;
 }
+.brand-overlay:hover { color: #ffffff; background: rgba(24, 28, 34, 1); transform: translateY(-1px); }
+.brand-mark { width: 1.2em; height: 1.2em; color: var(--accent); flex: none; }
 
-.brand-overlay:hover {
-    background: rgba(26, 26, 28, 0.95);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-    color: #fff;
+/* ---- Site navigation pill (top right) ---- */
+.map-nav {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 2000;
 }
-
-.brand-overlay svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: var(--yellow-light); /* Use theme accent color */
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+.map-nav-toggle {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    height: 38px;
+    padding: 0 0.85rem;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--header-fg);
+    background: var(--pill);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
 }
-
-/* Push Leaflet controls down so they don't overlap the brand */
-.leaflet-top.leaflet-left {
-    top: 70px !important; /* Brand height + padding */
+.map-nav-toggle svg { width: 18px; height: 18px; }
+.map-nav-list {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    background: var(--pill);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
+.map-nav-list a {
+    display: block;
+    padding: 0.38rem 0.75rem;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--header-fg);
+    text-decoration: none;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.map-nav-list a:hover { color: var(--accent); background: rgba(255, 255, 255, 0.06); }
+.map-nav-list a[aria-current="page"] { color: var(--accent); }
 
+/* ---- Layer panel ---- */
 #ui-panel {
-    position: absolute; 
-    top: 15px; /* Aligned with brand */
-    right: 15px; 
+    position: absolute;
+    top: 68px;
+    right: 15px;
     z-index: 1000;
-    background: var(--bg-glass); 
+    background: var(--glass);
+    color: var(--fg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    padding: 15px; 
-    border-radius: 10px; 
-    border: 1px solid rgba(0,0,0,0.1);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
     width: 280px;
     max-width: 90vw;
-    max-height: calc(100vh - 30px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    max-height: calc(100vh - 160px);
+    max-height: calc(100dvh - 160px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    transition: all 0.2s ease-in-out;
-    max-height: calc(100vh - 30px);
-    max-height: calc(100dvh - 30px); 
 }
 
-.panel-title { 
-    font-size: 10px; 
-    font-weight: 800; 
-    letter-spacing: 1.5px; 
-    text-transform: uppercase; 
-    color: #5f6368; 
-    margin-bottom: 10px; 
+.panel-title {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -107,99 +235,270 @@ body {
 
 .info-btn {
     background: none;
-    border: 1.5px solid #5f6368;
-    color: #5f6368;
+    border: 1.5px solid var(--muted);
+    color: var(--muted);
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: var(--font-head);
     font-size: 11px;
+    font-weight: 700;
     cursor: pointer;
-    font-weight: bold;
 }
+.info-btn:hover { color: var(--accent-ink); border-color: var(--accent); }
 
-select { 
-    width: 100%; 
-    padding: 10px; 
-    border-radius: 6px; 
-    border: 1px solid #dadce0; 
-    font-size: 13px; 
-    background: white; 
-    cursor: pointer; 
-    outline: none;
+#layer-select {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font: inherit;
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--card);
+    cursor: pointer;
 }
+#layer-select:focus { outline: 2px solid var(--accent); outline-offset: 0; }
 
-/* Legend and Sampling Styles */
+/* Legend: the swatch colours are the data colour scale (YlOrRd) — keep them. */
 .legend {
     margin-top: 12px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4px;
-    background: rgba(0,0,0,0.02);
+    background: var(--soft);
     padding: 8px;
-    border-radius: 6px;
+    border-radius: 8px;
 }
-.legend-item {
-    display: flex;
-    align-items: center;
-    font-size: 10px;
-    color: #5f6368;
-}
+.legend-item { display: flex; align-items: center; font-size: 11px; color: var(--muted); }
+.legend-unit { font-style: italic; opacity: 0.75; }
 .swatch {
     width: 12px;
     height: 12px;
     margin-right: 6px;
     border-radius: 2px;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
 }
+.sw-1 { background: #FFFFCC; }
+.sw-2 { background: #FFEDA0; }
+.sw-3 { background: #FED976; }
+.sw-4 { background: #FEB24C; }
+.sw-5 { background: #FD8D3C; }
+.sw-6 { background: #F03B20; }
+.sw-7 { background: #BD0026; }
 
-#pixel-info { 
-    font-size: 13px; 
-    margin-top: 12px; 
-    border-top: 1px solid #eee; 
-    padding-top: 12px; 
+#pixel-info {
+    font-size: 13px;
+    margin-top: 12px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+}
+.pixel-hint { color: var(--muted); font-style: italic; font-size: 11.5px; line-height: 1.4; }
+.pixel-busy { color: var(--muted); font-style: italic; padding: 10px 0; }
+
+.val-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--line);
+}
+.val-num { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+
+/* ---- Info modal ---- */
+#modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+#modal-overlay.active { visibility: visible; opacity: 1; }
+
+#data-modal {
+    background: var(--card);
+    color: var(--fg);
+    width: 90%;
+    max-width: 550px;
+    max-height: 85vh;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    padding: 25px;
+    overflow-y: auto;
+    position: relative;
+}
+#data-modal h2 { margin-top: 0; font-size: 1.3rem; }
+#data-modal p { line-height: 1.5; font-size: 0.92rem; }
+
+.warning-box {
+    background: var(--accent-tint);
+    border-left: 4px solid var(--accent);
+    padding: 12px;
+    margin: 15px 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    border-radius: 4px;
 }
 
-.val-row { 
-    display: flex; 
-    justify-content: space-between; 
-    padding: 4px 0; 
-    border-bottom: 1px solid rgba(0,0,0,0.03); 
+.cog-box { position: relative; margin-top: 10px; }
+.code-block {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    margin: 0;
+    padding: 8px 38px 8px 10px;
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.copy-btn {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.copy-btn:hover { color: var(--accent-ink); border-color: var(--accent); }
+.copy-btn svg { width: 14px; height: 14px; }
+.copy-btn .icon-done { display: none; }
+.copy-btn.copied { color: var(--ok); border-color: var(--ok); background: var(--ok-tint); }
+.copy-btn.copied .icon-copy { display: none; }
+.copy-btn.copied .icon-done { display: block; }
+
+.modal-close {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    border-top: 1px solid var(--line);
+    padding-top: 15px;
 }
 
-.val-num { 
-    font-weight: 700; 
-    font-family: monospace;
-    color: var(--accent-red);
+/* ---- Contact dialog (assets/js/contact.js) ---- */
+.contact-dialog {
+    width: min(560px, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--fg);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    font-family: var(--font-body);
+}
+.contact-dialog::backdrop { background: rgba(10, 12, 16, 0.65); }
+.contact-inner { padding: 1.4rem 1.5rem 1.5rem; }
+.contact-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+.contact-head h2 { margin: 0; font-size: 1.35rem; color: var(--ink-strong); }
+.contact-x {
+    display: inline-grid;
+    place-items: center;
+    width: 32px; height: 32px;
+    padding: 0;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+}
+.contact-x:hover { color: var(--fg); border-color: var(--accent); }
+.contact-x svg { width: 16px; height: 16px; }
+.contact-intro { margin: 0 0 1rem; color: var(--muted); font-size: 0.95rem; }
+.contact-form { display: grid; gap: 0.85rem; }
+.contact-field { display: grid; gap: 0.3rem; }
+.contact-field label { font-family: var(--font-head); font-weight: 600; font-size: 0.9rem; color: var(--ink-strong); }
+.contact-field .optional { font-family: var(--font-body); font-weight: 400; color: var(--muted); }
+.contact-field input, .contact-field textarea {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+.contact-field textarea { min-height: 8.5rem; resize: vertical; }
+.contact-field input:focus, .contact-field textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.contact-field input:user-invalid, .contact-field textarea:user-invalid { border-color: var(--error); }
+.contact-counter { justify-self: end; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.contact-counter.is-short { color: var(--accent-ink); }
+.contact-privacy { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.contact-error {
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.92rem;
+    color: var(--error);
+    background: rgba(180, 35, 24, 0.08);
+    border-left: 3px solid var(--error);
+    border-radius: 4px;
+}
+.contact-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6rem; margin-top: 0.2rem; }
+.contact-done { padding: 0.5rem 0 0.2rem; }
+.contact-done p { margin: 0 0 1.2rem; font-size: 1.02rem; }
+
+/* ---- Leaflet controls ---- */
+.leaflet-bottom.leaflet-left { margin-bottom: 50px; }
+.leaflet-control-layers, .leaflet-bar { border-radius: 8px; }
+
+/* ---- Phones / narrow screens: the nav collapses into a menu button ---- */
+@media (max-width: 760px) {
+    .map-nav { top: 10px; right: 10px; }
+    .map-nav-toggle { display: inline-flex; }
+    .map-nav-list {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 11rem;
+        padding: 0.35rem;
+        border-radius: 12px;
+    }
+    .map-nav.open .map-nav-list { display: flex; }
+    .map-nav-list a { padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.95rem; }
+
+    .brand-overlay { top: 10px; left: 10px; font-size: 0.92rem; padding: 0.5rem 0.8rem; }
+
+    #ui-panel {
+        width: 250px;
+        right: 10px;
+        top: 58px;
+        padding: 12px;
+        max-height: calc(100dvh - 150px);
+    }
+    .leaflet-bottom .leaflet-control { margin-bottom: 20px; }
+    .leaflet-right .leaflet-control { margin-right: 12px; }
 }
 
 @media (max-width: 600px) {
-    #ui-panel {
-        width: 260px;
-        right: 10px;
-        top: 50px;
-        padding: 12px;
-    }
-    .brand-overlay {
-        top: 10px;
-        left: 10px;
-        font-size: 0.9rem;
-        padding: 6px 10px;
-    }
-    .leaflet-top.leaflet-left {
-        top: 60px !important;
-    }
-    .leaflet-bottom .leaflet-control {
-        margin-bottom: 20px; 
-    }
-    .leaflet-right .leaflet-control {
-        margin-right: 15px; 
-    }
-}
-
-.leaflet-bottom.leaflet-left {
-  margin-bottom: 50px; 
+    .contact-inner { padding: 1.1rem 1.1rem 1.2rem; }
 }

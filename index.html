@@ -1,56 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://server.arcgisonline.com; font-src 'self'; connect-src 'self' https://app.minethegap.eu; form-action https://app.minethegap.eu; base-uri 'none'; object-src 'none'; upgrade-insecure-requests">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>MINE-THE-GAP Explore</title>
     <meta name="description" content="Where, when, what, and how much is mined. Research by Victor Maus.">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Montserrat:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
 
-    <!-- Leaflet & GeoTIFF.js -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Point to the browser distribution of geotiff.js -->
-    <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
 
-    <!-- Custom MINE-THE-GAP Styles -->
-    <link rel="stylesheet" href="https://minethegap.eu/assets/css/mtg.css" />
-    <link rel="stylesheet" href="assets/css/mtg-explore.css" />
+    <!-- Leaflet & geotiff.js, self-hosted (see assets/vendor/README.md) -->
+    <link rel="stylesheet" href="/assets/vendor/leaflet-1.9.4/leaflet.css">
+    <script src="/assets/vendor/leaflet-1.9.4/leaflet.js" defer></script>
+    <script src="/assets/vendor/geotiff-2.1.3/geotiff.js" defer></script>
 
+    <!-- MINE-THE-GAP styles (own copy of the identity tokens and fonts) -->
+    <link rel="stylesheet" href="/assets/css/mtg-explore.css">
+
+    <script src="/assets/js/contact.js" defer></script>
+    <script src="/assets/js/map.js" defer></script>
 </head>
 <body>
 
-<!-- New Brand Overlay (Replaces Header) -->
-<a href="https://minethegap.eu" class="brand-overlay" title="Back to Home">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="color: var(--yellow-light);">
-        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-    </svg>
+<!-- Brand pill (replaces the header) -->
+<a href="https://minethegap.eu/" class="brand-overlay" title="Back to Home">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="4" fill="currentColor"/><path d="M7 8h10l-2 3h-6zM9 13h6l-2 3h-2z" fill="rgba(0,0,0,.35)"/></svg>
     <span>MINE-THE-GAP</span>
 </a>
+
+<!-- Site navigation (same links as minethegap.eu) -->
+<nav class="map-nav" id="map-nav" aria-label="Main">
+    <button type="button" class="map-nav-toggle" id="map-nav-toggle" aria-expanded="false" aria-controls="map-nav-list">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        <span>Menu</span>
+    </button>
+    <ul class="map-nav-list" id="map-nav-list">
+        <li><a href="https://minethegap.eu/publications.html">Publications</a></li>
+        <li><a href="https://minethegap.eu/jobs.html">Jobs</a></li>
+        <li><a href="https://app.minethegap.eu/">App</a></li>
+        <li><a href="/" aria-current="page">Maps</a></li>
+        <li><a href="#contact" data-contact-open>Contact</a></li>
+    </ul>
+</nav>
 
 <div id="ui-panel">
     <div class="panel-title">
         Global Mining Land Use
-        <button class="info-btn" onclick="toggleModal(true)">?</button>
+        <button type="button" class="info-btn" id="info-btn" aria-label="About this map">?</button>
     </div>
+    <label for="layer-select" class="visually-hidden">Material</label>
     <select id="layer-select"><option>Initializing...</option></select>
-    
+
     <div class="legend">
-        <div class="legend-item"><div class="swatch" style="background: #FFFFCC;"></div> < 5</div>
-        <div class="legend-item"><div class="swatch" style="background: #FFEDA0;"></div> 5-20</div>
-        <div class="legend-item"><div class="swatch" style="background: #FED976;"></div> 20-50</div>
-        <div class="legend-item"><div class="swatch" style="background: #FEB24C;"></div> 50-100</div>
-        <div class="legend-item"><div class="swatch" style="background: #FD8D3C;"></div> 100-250</div>
-        <div class="legend-item"><div class="swatch" style="background: #F03B20;"></div> 250-500</div>
-        <div class="legend-item"><div class="swatch" style="background: #BD0026;"></div> > 500</div>
-        <div class="legend-item" style="font-style: italic; opacity: 0.6;">km²</div>
+        <div class="legend-item"><div class="swatch sw-1"></div> &lt; 5</div>
+        <div class="legend-item"><div class="swatch sw-2"></div> 5-20</div>
+        <div class="legend-item"><div class="swatch sw-3"></div> 20-50</div>
+        <div class="legend-item"><div class="swatch sw-4"></div> 50-100</div>
+        <div class="legend-item"><div class="swatch sw-5"></div> 100-250</div>
+        <div class="legend-item"><div class="swatch sw-6"></div> 250-500</div>
+        <div class="legend-item"><div class="swatch sw-7"></div> &gt; 500</div>
+        <div class="legend-item legend-unit">km²</div>
     </div>
 
-    <div id="pixel-info">
-        <div style="color: #70757a; font-style: italic; font-size: 11px; line-height: 1.4;">
+    <div id="pixel-info" aria-live="polite">
+        <div class="pixel-hint">
             Click on the map to sample material extraction areas.
         </div>
     </div>
@@ -58,297 +72,45 @@
 
 <!-- Information Modal -->
 <div id="modal-overlay">
-    <div id="data-modal">
-        <h2>Global Mining Land Use</h2>
+    <div id="data-modal" role="dialog" aria-modal="true" aria-labelledby="data-modal-title">
+        <h2 id="data-modal-title">Global Mining Land Use</h2>
         <p>This interactive map provides an overview of the mining area linked to the extraction of different materials globally. The area was calculated based on mining land use polygons with associated materials, including primary materials and byproducts.</p>
-        
+
         <div class="warning-box">
             <strong>Important: Layers are not additive.</strong><br>
             The values for different material layers <strong>cannot</strong> be summed to calculate total mining area. In many locations, multiple materials are co-extracted from the same geographic area. Adding these values would result in significant double-counting.
         </div>
-        <p><strong>Data license:</strong> <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></p>
+        <p><strong>Data license:</strong> <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a></p>
 
-        <p><strong>Citation:</strong> Maus, V., et al. (2026). A data-driven approach to mapping global commodity-specific mining land-use. Journal of Cleaner Production 
-            <a href="https://doi.org/10.1016/j.jclepro.2025.147437" target="_blank">10.1016/j.jclepro.2025.147437</a>
-
-
+        <p><strong>Citation:</strong> Maus, V., et al. (2026). A data-driven approach to mapping global commodity-specific mining land-use. Journal of Cleaner Production
+            <a href="https://doi.org/10.1016/j.jclepro.2025.147437" target="_blank" rel="noopener noreferrer">10.1016/j.jclepro.2025.147437</a>
         </p>
 
         <div class="data-links">
-            <p><a id="readme-link" href="#" target="_blank">View README</a></p>
+            <p><a id="readme-link" href="#" target="_blank" rel="noopener noreferrer">View README</a></p>
             <p><a id="download-link" href="#" download>Download GeoTIFF file</a></p>
             <p>Direct access to Cloud Optimized GeoTIFF (COG):</p>
-            <div style="position: relative; margin-top: 10px;">
-                <span id="cog-link-display" class="code-block" style="margin: 0; padding-right: 35px; min-height: 32px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
-                <button id="copy-btn" onclick="copyCogLink()" title="Copy to clipboard" style="position: absolute; top: 50%; right: 4px; transform: translateY(-50%); background: #ffffff; border: 1px solid #dadce0; border-radius: 4px; width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #70757a; transition: all 0.2s ease;">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <div class="cog-box">
+                <span id="cog-link-display" class="code-block">Loading...</span>
+                <button type="button" id="copy-btn" class="copy-btn" title="Copy to clipboard" aria-label="Copy the COG link">
+                    <svg class="icon-copy" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                    <svg class="icon-done" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                     </svg>
                 </button>
             </div>
         </div>
 
         <div class="modal-close">
-            <button class="btn-close" onclick="toggleModal(false)">Close</button>
+            <button type="button" class="btn-secondary" data-contact-open>Get in touch</button>
+            <button type="button" class="btn-close" id="modal-close-btn">Close</button>
         </div>
     </div>
 </div>
 
 <div id="map"></div>
-
-<script>
-
-    const DATA_VERSION = "20251227";
-    const BASE_URL = "https://maps.minethegap.eu/assets/data/"; 
-    const cogUrl = `${BASE_URL}material_areas_km2-${DATA_VERSION}.tif`;
-    const readmeUrl = `${BASE_URL}material_areas_km2-${DATA_VERSION}.txt`;
-    
-    // Update Modal links on load
-    document.getElementById('download-link').href = cogUrl;
-    document.getElementById('readme-link').href = readmeUrl;
-    document.getElementById('cog-link-display').innerText = `https://maps.minethegap.eu/${cogUrl}`;
-
-    // Global state - initialized from metadata
-    let NODATA = 65535;
-    let materials = [];
-
-    function toggleModal(show) {
-        document.getElementById('modal-overlay').classList.toggle('active', show);
-    }
-
-    // Function to copy COG link to clipboard
-    async function copyCogLink() {
-        const text = document.getElementById('cog-link-display').textContent;
-        const btn = document.getElementById('copy-btn');
-        
-        // Helper to show success state (visual feedback)
-        const showSuccess = () => {
-            btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-            btn.style.color = "#137333";
-            btn.style.borderColor = "#137333";
-            btn.style.backgroundColor = "#e6f4ea";
-            setTimeout(() => {
-                btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
-                btn.style.color = "#70757a";
-                btn.style.borderColor = "#dadce0";
-                btn.style.backgroundColor = "#ffffff";
-            }, 2000);
-        };
-
-        // 1. Try Modern API (HTTPS required)
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            try {
-                await navigator.clipboard.writeText(text);
-                showSuccess();
-                return;
-            } catch (err) {
-                console.warn('Clipboard API failed, trying fallback...', err);
-            }
-        }
-
-        // 2. Fallback to Legacy execCommand (for older browsers or HTTP)
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = 'fixed'; // Avoid scrolling to bottom
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        try {
-            const successful = document.execCommand('copy');
-            if (successful) showSuccess();
-        } catch (err) {
-            console.error('Fallback copy failed', err);
-        }
-        document.body.removeChild(textArea);
-    }
-
-    const map = L.map('map', { 
-        center: [20, 0], 
-        zoom: 2, 
-        minZoom: 2, 
-        maxZoom: 12, 
-        zoomControl: false 
-    });
-    
-    map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    // Define layers separately to ensure clean initialization
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2nt4_1_3b784932e904d52715eda321', { 
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>' 
-    });
-
-    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
-        attribution: 'Sources: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-    });
-
-    // Add default layer
-    darkLayer.addTo(map);
-
-    // Add Control
-    const baseLayers = {
-        "Dark Map": darkLayer,
-        "Satellite": satLayer
-    };
-    L.control.layers(baseLayers, null, { position: 'bottomleft' }).addTo(map);
-
-    map.on('baselayerchange', () => { if (rasterLayer) rasterLayer.bringToFront(); });
-
-    let tiff, image, rasterLayer, currentBandData, width, height, origin, res, clickMarker;
-
-function parseGdalMetadata(xmlString) {
-        if (!xmlString) return {};
-        
-        // --- FIX START: Sanitize the string ---
-        // Remove null bytes (\u0000) which break Firefox DOMParser
-        // and trim whitespace.
-        const cleanXml = xmlString.replace(/\u0000/g, '').trim();
-        // --- FIX END ---
-
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(cleanXml, "text/xml");
-
-        const parseError = xmlDoc.getElementsByTagName("parsererror");
-        if (parseError.length > 0) {
-            console.warn("GDAL Metadata XML Parse Error:", parseError[0].textContent);
-            return {};
-        }
-
-        const items = xmlDoc.getElementsByTagName("Item");
-        const meta = {};
-        for (let i = 0; i < items.length; i++) {
-            const name = items[i].getAttribute("name");
-            const sample = items[i].getAttribute("sample");
-            const text = items[i].textContent.trim();
-            
-            if (name === "DESCRIPTION" && sample !== null) {
-                const idx = parseInt(sample);
-                meta[idx] = text;
-            } else if (name && name.startsWith("BAND_")) {
-                const idx = parseInt(name.replace("BAND_", "")) - 1;
-                meta[idx] = text;
-            }
-        }
-        return meta;
-    }
-
-    async function initMapTool() {
-        try {
-            tiff = await GeoTIFF.fromUrl(cogUrl);
-            image = await tiff.getImage();
-            
-            // Extract NODATA
-            const gdalNoData = image.getGDALNoData();
-            if (gdalNoData !== null) NODATA = gdalNoData;
-
-            // Extract Band Labels
-            const numBands = image.getSamplesPerPixel();
-            
-            let descriptions = {};
-            try {
-                if (image.fileDirectory && image.fileDirectory.GDAL_METADATA) {
-                    descriptions = parseGdalMetadata(image.fileDirectory.GDAL_METADATA);
-                }
-            } catch (metaErr) {
-                console.warn("Could not access GDAL_METADATA:", metaErr);
-            } 
-            materials = [];
-            for (let i = 0; i < numBands; i++) {
-                // Use metadata description, otherwise fallback to "Band X"
-                materials.push(descriptions[i] || `Band ${i + 1}`);
-            }
-
-            width = image.getWidth(); 
-            height = image.getHeight();
-            origin = image.getOrigin(); 
-            res = image.getResolution();
-
-            const select = document.getElementById('layer-select');
-            select.innerHTML = '';
-            materials.forEach((m, i) => {
-                const opt = document.createElement('option');
-                opt.value = i; opt.innerText = m.replace(/_/g, ' ');
-                select.appendChild(opt);
-            });
-
-            select.onchange = async (e) => {
-                const bandIndex = parseInt(e.target.value);
-                const raster = await image.readRasters({ samples: [bandIndex] });
-                currentBandData = raster[0];
-                if (rasterLayer) { rasterLayer.redraw(); rasterLayer.bringToFront(); }
-            };
-
-            const initialBand = await image.readRasters({ samples: [0] });
-            currentBandData = initialBand[0];
-            setupGridLayer();
-            map.on('click', handleMapClick);
-        } catch (err) { console.error("Initialization Error:", err); }
-    }
-
-    function setupGridLayer() {
-        rasterLayer = L.gridLayer({ opacity: 0.85, zIndex: 1000 });
-        rasterLayer.createTile = function(coords) {
-            const tile = document.createElement('canvas');
-            tile.width = tile.height = 256;
-            const ctx = tile.getContext('2d');
-            const imgData = ctx.createImageData(256, 256);
-            for (let y = 0; y < 256; y++) {
-                for (let x = 0; x < 256; x++) {
-                    const p = map.unproject(coords.multiplyBy(256).add([x, y]), coords.z);
-                    const rX = Math.floor((p.lng - origin[0]) / res[0]);
-                    const rY = Math.floor((p.lat - origin[1]) / res[1]);
-                    if (rX >= 0 && rX < width && rY >= 0 && rY < height) {
-                        const val = currentBandData[rY * width + rX];
-                        if (val !== NODATA && val > 0) {
-                            const idx = (y * 256 + x) * 4;
-                            let c;
-                            if (val < 50) c = [255,255,204,180];
-                            else if (val < 200) c = [255,237,160,200];
-                            else if (val < 500) c = [254,217,118,220];
-                            else if (val < 1000) c = [254,178,76,230];
-                            else if (val < 2500) c = [253,141,60,240];
-                            else if (val < 5000) c = [240,59,32,250];
-                            else c = [189,0,38,255];
-                            imgData.data[idx] = c[0]; imgData.data[idx+1] = c[1];
-                            imgData.data[idx+2] = c[2]; imgData.data[idx+3] = c[3];
-                        }
-                    }
-                }
-            }
-            ctx.putImageData(imgData, 0, 0);
-            return tile;
-        };
-        rasterLayer.addTo(map).bringToFront();
-    }
-
-    async function handleMapClick(e) {
-        if (clickMarker) map.removeLayer(clickMarker);
-        clickMarker = L.marker(e.latlng).addTo(map);
-        
-        const info = document.getElementById('pixel-info');
-        info.innerHTML = '<div style="color:#888; font-style:italic; padding: 10px 0;">Sampling layers...</div>';
-
-        const rX = Math.floor((e.latlng.lng - origin[0]) / res[0]);
-        const rY = Math.floor((e.latlng.lat - origin[1]) / res[1]);
-        if (rX < 0 || rX >= width || rY < 0 || rY >= height) return;
-
-        const fullImage = await tiff.getImage(0);
-        const pixelSample = await fullImage.readRasters({ window: [rX, rY, rX + 1, rY + 1] });
-        let html = ""; let foundAny = false;
-        materials.forEach((m, i) => {
-            const val = pixelSample[i][0];
-            if (val !== NODATA && val > 0) {
-                foundAny = true;
-                html += `<div class="val-row"><span>${m.replace(/_/g, ' ')}</span><span>${(val/10).toFixed(1)} km²</span></div>`;
-            }
-        });
-        info.innerHTML = foundAny ? html : "No mining detected.";
-    }
-
-    window.onload = initMapTool;
-</script>
 
 </body>
 </html>
