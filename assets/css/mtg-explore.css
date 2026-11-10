@@ -196,6 +196,10 @@ a:hover { color: var(--accent-ink); }
 }
 .map-nav-list a:hover { color: var(--accent); background: rgba(255, 255, 255, 0.06); }
 .map-nav-list a[aria-current="page"] { color: var(--accent); }
+/* Contact is an envelope icon (with its word in the phone menu). */
+.map-nav-list a.nav-icon { display: inline-flex; align-items: center; gap: 0.5rem; }
+.map-nav-list a.nav-icon svg { width: 18px; height: 18px; flex: none; }
+.map-nav-list a.nav-icon .label { display: none; }
 
 /* ---- Layer panel ---- */
 #ui-panel {
@@ -489,6 +493,7 @@ a:hover { color: var(--accent-ink); }
     }
     .map-nav.open .map-nav-list { display: flex; }
     .map-nav-list a { padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.95rem; }
+    .map-nav-list a.nav-icon .label { display: inline; }
 
     .brand-overlay { top: 10px; left: 10px; font-size: 0.92rem; padding: 0.5rem 0.8rem; }
 
