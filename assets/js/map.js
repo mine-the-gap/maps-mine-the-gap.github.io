@@ -107,18 +107,27 @@
     // Esri basemaps: no key needed. The credit follows Esri's attribution rules ("Powered by Esri" plus the data
     // sources each service lists in its copyrightText).
     const ESRI = 'Powered by <a href="https://www.esri.com" target="_blank" rel="noopener noreferrer">Esri</a>';
-    const darkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    // The plain map follows the light / dark theme (theme.js): Esri's light or dark grey canvas, which share their
+    // sources and so their credit.
+    const CANVAS = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_{shade}_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    const isDark = () => (window.mtgIsDark ? window.mtgIsDark() : true);
+    const canvasUrl = () => CANVAS.replace('{shade}', isDark() ? 'Dark' : 'Light');
+    const mapLayer = L.tileLayer(canvasUrl(), {
         maxNativeZoom: 16,
         attribution: ESRI + ' | Esri, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors, and the GIS user community'
+    });
+    document.addEventListener('mtg-theme', () => {
+        mapLayer.setUrl(canvasUrl());
+        if (rasterLayer) rasterLayer.redraw();  // the light theme rims the data (below)
     });
 
     const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: ESRI + ' | Sources: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     });
 
-    darkLayer.addTo(map);
+    mapLayer.addTo(map);
 
-    L.control.layers({ "Dark Map": darkLayer, "Satellite": satLayer }, null, { position: 'bottomleft' }).addTo(map);
+    L.control.layers({ "Map": mapLayer, "Satellite": satLayer }, null, { position: 'bottomleft' }).addTo(map);
 
     map.on('baselayerchange', () => { if (rasterLayer) rasterLayer.bringToFront(); });
 
@@ -206,6 +215,10 @@
         } catch (err) { console.error("Initialization Error:", err); }
     }
 
+    // On the light map the palest classes would fade into the grey, so there every patch of data gets a thin dark rim;
+    // the colours (and the legend) stay the same in both themes.
+    const RIM = [92, 58, 16, 170];
+
     function setupGridLayer() {
         rasterLayer = L.gridLayer({ opacity: 0.85, zIndex: 1000 });
         rasterLayer.createTile = function (coords) {
@@ -213,6 +226,7 @@
             tile.width = tile.height = 256;
             const ctx = tile.getContext('2d');
             const imgData = ctx.createImageData(256, 256);
+            const hasData = new Uint8Array(256 * 256);
             for (let y = 0; y < 256; y++) {
                 for (let x = 0; x < 256; x++) {
                     const p = map.unproject(coords.multiplyBy(256).add([x, y]), coords.z);
@@ -221,6 +235,7 @@
                     if (rX >= 0 && rX < width && rY >= 0 && rY < height) {
                         const val = currentBandData[rY * width + rX];
                         if (val !== NODATA && val > 0) {
+                            hasData[y * 256 + x] = 1;
                             const idx = (y * 256 + x) * 4;
                             let c;
                             if (val < 50) c = [255,255,204,180];
@@ -233,6 +248,17 @@
                             imgData.data[idx] = c[0]; imgData.data[idx+1] = c[1];
                             imgData.data[idx+2] = c[2]; imgData.data[idx+3] = c[3];
                         }
+                    }
+                }
+            }
+            if (!isDark()) {
+                for (let y = 0; y < 256; y++) {
+                    for (let x = 0; x < 256; x++) {
+                        const i = y * 256 + x;
+                        if (hasData[i]) continue;
+                        const next = (x > 0 && hasData[i - 1]) || (x < 255 && hasData[i + 1]) ||
+                            (y > 0 && hasData[i - 256]) || (y < 255 && hasData[i + 256]);
+                        if (next) imgData.data.set(RIM, i * 4);
                     }
                 }
             }

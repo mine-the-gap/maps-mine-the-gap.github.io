@@ -28,13 +28,16 @@
     --ok-tint: #e6f4ea;
     --glass: rgba(255, 255, 255, 0.95);
     --pill: rgba(24, 28, 34, 0.92);
+    --map-bg: #e3e5e8;
     --font-head: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     color-scheme: light;
 }
 
+/* Dark theme: automatic (follows the OS) unless the moon/sun button chose one (data-theme on <html>, theme.js). The
+   map's base layer follows it too (map.js). */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --fg: #e6e8eb;
         --muted: #9aa3ad;
         --bg: #111418;
@@ -51,8 +54,29 @@
         --ok: #7fd29a;
         --ok-tint: #17301f;
         --glass: rgba(26, 30, 36, 0.94);
+        --map-bg: #0e1013;
         color-scheme: dark;
     }
+}
+:root[data-theme="dark"] {
+    --fg: #e6e8eb;
+    --muted: #9aa3ad;
+    --bg: #111418;
+    --card: #1a1e24;
+    --line: #2a3038;
+    --soft: #1f242b;
+    --ink-strong: #f1f3f5;
+    --header-bg: #181c22;
+    --header-fg: #e9ebee;
+    --accent-dark: #e4a233;
+    --accent-ink: #f0a93a;
+    --accent-tint: rgba(240, 169, 58, 0.12);
+    --error: #ff8077;
+    --ok: #7fd29a;
+    --ok-tint: #17301f;
+    --glass: rgba(26, 30, 36, 0.94);
+    --map-bg: #0e1013;
+    color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -113,7 +137,7 @@ a:hover { color: var(--accent-ink); }
     height: 100%;
     margin: 0;
     z-index: 1;
-    background: #0e1013;
+    background: var(--map-bg);
 }
 .leaflet-container { font-family: var(--font-body); }
 
@@ -196,10 +220,29 @@ a:hover { color: var(--accent-ink); }
 }
 .map-nav-list a:hover { color: var(--accent); background: rgba(255, 255, 255, 0.06); }
 .map-nav-list a[aria-current="page"] { color: var(--accent); }
-/* Contact is an envelope icon (with its word in the phone menu). */
-.map-nav-list a.nav-icon { display: inline-flex; align-items: center; gap: 0.5rem; }
-.map-nav-list a.nav-icon svg { width: 18px; height: 18px; flex: none; }
-.map-nav-list a.nav-icon .label { display: none; }
+/* Contact is an envelope icon, and light / dark a moon or sun (each with its word in the phone menu). */
+.map-nav-list .nav-icon { display: inline-flex; align-items: center; gap: 0.5rem; }
+.map-nav-list .nav-icon svg { width: 18px; height: 18px; flex: none; }
+.map-nav-list .nav-icon .label { display: none; }
+.map-nav-list button.nav-icon {
+    padding: 0.38rem 0.75rem;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--header-fg);
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.map-nav-list button.nav-icon:hover { color: var(--accent); background: rgba(255, 255, 255, 0.06); }
+.theme-icon-sun { display: none; }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-icon-sun { display: block; }
+    :root:not([data-theme="light"]) .theme-icon-moon { display: none; }
+}
+:root[data-theme="dark"] .theme-icon-sun { display: block; }
+:root[data-theme="dark"] .theme-icon-moon { display: none; }
 
 /* ---- Layer panel ---- */
 #ui-panel {
@@ -287,6 +330,11 @@ a:hover { color: var(--accent-ink); }
     border-radius: 2px;
     border: 1px solid rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
+}
+/* The light map rims the data in dark (map.js), and so does the legend. */
+:root:not([data-theme="dark"]) .swatch { border-color: rgba(92, 58, 16, 0.67); }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .swatch { border-color: rgba(0, 0, 0, 0.08); }
 }
 .sw-1 { background: #FFFFCC; }
 .sw-2 { background: #FFEDA0; }
@@ -492,8 +540,9 @@ a:hover { color: var(--accent-ink); }
         border-radius: 12px;
     }
     .map-nav.open .map-nav-list { display: flex; }
-    .map-nav-list a { padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.95rem; }
-    .map-nav-list a.nav-icon .label { display: inline; }
+    .map-nav-list a, .map-nav-list button.nav-icon { padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.95rem; }
+    .map-nav-list button.nav-icon { width: 100%; }
+    .map-nav-list .nav-icon .label { display: inline; }
 
     .brand-overlay { top: 10px; left: 10px; font-size: 0.92rem; padding: 0.5rem 0.8rem; }
 
